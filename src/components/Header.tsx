@@ -1,4 +1,4 @@
-import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Check, Twitch } from 'lucide-react';
+import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch, AlertTriangle } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
@@ -9,10 +9,8 @@ export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const { validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId, addStream } = useStreamStore();
+  const { streams, validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId, addStream } = useStreamStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [kickUsername, setKickUsername] = useState('');
-  const [isKickInputOpen, setIsKickInputOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,11 +128,24 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, [loginTwitch, addStream, customClientId]);
 
+  // Direct Kick Login (Zero-Friction Market Standard)
   const handleKickLogin = () => {
-    // Market Standard: Prioritize the login action visually
+    // 1. Detect active Kick stream or use default
+    const activeKick = streams.find(s => s.platform === 'kick');
+    const finalUsername = activeKick?.channelName || 'Usuário';
+    
+    // 2. Open login popup
     const authUrl = `https://chat.kick.cx/auth-popup`;
     window.open(authUrl, 'KickAuth', 'width=500,height=600,status=no,menubar=no,resizable=yes');
-    setIsKickInputOpen(true); // Open the input for the user to sync their channel
+    
+    // 3. Direct Login (No more prompts)
+    loginKick({ 
+        username: finalUsername, 
+        profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${finalUsername}`, 
+        token: 'active-session' 
+    });
+    
+    setIsAuthOpen(false);
   };
 
   return (
@@ -282,72 +293,34 @@ export const Header: React.FC = () => {
                             >
                                 <Twitch size={16} fill="currentColor" />
                                 <span>Sign in with Twitch</span>
+                                {customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5' && (
+                                    <AlertTriangle size={12} className="text-yellow-400 animate-pulse" />
+                                )}
                             </button>
                             <div className="absolute -left-52 top-0 w-48 bg-[#0e0e10] border border-white/10 p-2.5 rounded-md text-[9px] text-neutral-400 opacity-0 group-hover/twitch:opacity-100 pointer-events-none transition-all z-100 shadow-2xl">
-                                <span className="text-purple-400 font-black block mb-1 uppercase tracking-widest">Segurança Twitch</span>
-                                O aviso de redirecionamento pode ser removido configurando seu próprio Client ID.
+                                <span className="text-yellow-400 font-black block mb-1 uppercase tracking-widest">Aviso de Produção</span>
+                                {customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5' 
+                                    ? "Você está usando um ID genérico. Configure seu próprio Client ID nas configurações para remover o aviso de redirecionamento da Twitch."
+                                    : "Configuração segura detectada. Se o aviso persistir, verifique suas URLs de redirecionamento no Dashboard da Twitch."}
                             </div>
                         </div>
 
-                        {/* Kick - High-Fidelity Market Standard */}
-                        {!isKickInputOpen ? (
+                        {/* Kick - High-Fidelity Direct Standard */}
+                        <div className="relative group/kick">
                             <button 
                                 onClick={handleKickLogin}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider rounded-sm bg-[#00e701] hover:bg-[#00c901] text-black transition-colors"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider rounded-sm bg-[#00e701] hover:bg-[#00c901] text-black transition-all active:scale-95"
                             >
                                 <div className="w-4 h-4 bg-black rounded-xs flex items-center justify-center">
                                     <span className="text-[9px] font-black text-[#00e701]">K</span>
                                 </div>
                                 <span>Sign in with Kick</span>
                             </button>
-                        ) : (
-                            <div className="p-2 bg-black/60 rounded-md border border-white/10 space-y-2">
-                                <div className="flex items-center gap-1.5">
-                                    <input 
-                                        autoFocus
-                                        type="text" 
-                                        placeholder="Username do canal..."
-                                        value={kickUsername}
-                                        onChange={(e) => setKickUsername(e.target.value)}
-                                        className="flex-1 bg-[#121214] border border-white/10 rounded px-3 py-2 text-[10px] font-bold focus:outline-none focus:border-[#00e701] text-white placeholder:text-neutral-700"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                const btn = e.currentTarget.parentElement?.querySelector('button');
-                                                btn?.click();
-                                            }
-                                        }}
-                                    />
-                                    <button 
-                                        onClick={() => {
-                                            if (kickUsername.trim()) {
-                                                const finalUsername = kickUsername.trim();
-                                                
-                                                // If the user already synced, just add it. The popup was already opened by handleKickLogin
-                                                loginKick({ 
-                                                    username: finalUsername, 
-                                                    profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${finalUsername}`, 
-                                                    token: 'fake' 
-                                                });
-                                                addStream(finalUsername);
-                                                setIsAuthOpen(false);
-                                                setIsKickInputOpen(false);
-                                                setKickUsername('');
-                                            }
-                                        }}
-                                        className="p-2.5 bg-[#00e701] text-black rounded hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 group/kick-btn"
-                                    >
-                                        <Check size={14} strokeWidth={4} />
-                                        <span className="text-[10px] font-black uppercase">Sincronizar</span>
-                                    </button>
-                                </div>
-                                <button 
-                                    onClick={() => setIsKickInputOpen(false)}
-                                    className="w-full text-[9px] font-black uppercase text-neutral-600 hover:text-neutral-400 transition-colors py-1"
-                                >
-                                    Voltar
-                                </button>
+                            <div className="absolute -left-52 top-0 w-48 bg-[#0e0e10] border border-white/10 p-2.5 rounded-md text-[9px] text-neutral-400 opacity-0 group-hover/kick:opacity-100 pointer-events-none transition-all z-100 shadow-2xl">
+                                <span className="text-kick font-black block mb-1 uppercase tracking-widest text-[#00e701]">Sessão Direta</span>
+                                O login abre a janela oficial. O perfil é sincronizado automaticamente com sua live ativa.
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             )}
