@@ -64,6 +64,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
+          {/* Section: API & Developer */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter flex items-center gap-2">
+              <Settings size={12} /> API & Developer
+            </h3>
+            <div className="space-y-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Twitch Client ID</label>
+                <input 
+                  type="text"
+                  value={useStreamStore.getState().customClientId}
+                  onChange={(e) => useStreamStore.getState().setCustomClientId(e.target.value)}
+                  placeholder="Seu Twitch Client ID..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-twitch/50"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1">Kick Client ID</label>
+                <input 
+                  type="text"
+                  value={useStreamStore.getState().kickClientId}
+                  onChange={(e) => useStreamStore.getState().setKickClientId(e.target.value)}
+                  placeholder="Seu Kick Client ID..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-neutral-200 focus:outline-none focus:border-kick/50"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Section: Data Management */}
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter flex items-center gap-2">

@@ -4,12 +4,13 @@ import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
 import { SettingsModal } from './SettingsModal';
 import { useState, useEffect } from 'react'; // Added useEffect import
+import { generateCodeVerifier, generateCodeChallenge } from '../utils/pkce';
 
 export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const { streams, validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId, addStream } = useStreamStore();
+  const { validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId, addStream } = useStreamStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,11 +98,12 @@ export const Header: React.FC = () => {
     }
 
     // Phase 2: Listen for messages (If this is the Parent window receiving from Popup)
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
+      
+      // Twitch Success
       if (event.data?.type === 'TWITCH_AUTH_SUCCESS') {
         const token = event.data.token;
-        // Fetch user data for the parent
         fetch('https://api.twitch.tv/helix/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -118,34 +120,91 @@ export const Header: React.FC = () => {
                     token
                 });
                 addStream(user.login);
-                setIsAuthOpen(false); // Close the auth dropdown on success
+                setIsAuthOpen(false);
             }
         });
+      }
+
+      // Kick Success
+      if (event.data?.type === 'KICK_AUTH_SUCCESS') {
+        const token = event.data.token;
+        // Fetch Kick User Profile (Official API)
+        fetch('https://api.kick.com/public/v1/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Adjust according to real Kick API response structure
+            if (data) {
+                loginKick({
+                    username: data.name || data.username,
+                    profileImage: data.profile_picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`,
+                    token
+                });
+                setIsAuthOpen(false);
+            }
+        })
+        .catch(err => console.error('Kick Profile Fetch Error:', err));
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [loginTwitch, addStream, customClientId]);
+  }, [loginTwitch, loginKick, addStream, customClientId]);
 
-  // Direct Kick Login (Zero-Friction Market Standard)
-  const handleKickLogin = () => {
-    // 1. Detect active Kick stream or use default
-    const activeKick = streams.find(s => s.platform === 'kick');
-    const finalUsername = activeKick?.channelName || 'Usuário';
+  // Handle Kick Callback (Inside Popup)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+
+    if (code && state === 'kick_auth' && window.opener) {
+        const verifier = sessionStorage.getItem('kick_code_verifier');
+        if (!verifier) return;
+
+        const { kickClientId } = useStreamStore.getState();
+
+        // Exchange code for token
+        fetch('https://id.kick.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: kickClientId,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: window.location.origin,
+                code_verifier: verifier
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.access_token) {
+                window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, window.location.origin);
+                window.close();
+            }
+        })
+        .catch(err => console.error('Kick Token Exchange Error:', err));
+    }
+  }, []);
+
+  // Direct Kick Login (Official OAuth 2.1 Flow)
+  const handleKickLogin = async () => {
+    const { kickClientId } = useStreamStore.getState();
+    if (!kickClientId) {
+        setIsSettingsOpen(true);
+        alert('Por favor, configure seu Kick Client ID nas configurações primeiro.');
+        return;
+    }
+
+    const verifier = await generateCodeVerifier();
+    const challenge = await generateCodeChallenge(verifier);
+    sessionStorage.setItem('kick_code_verifier', verifier);
+
+    const REDIRECT_URI = window.location.origin;
+    const scope = encodeURIComponent('user:read chat:write'); // Correctly typed scope
+    const authUrl = `https://id.kick.com/oauth/authorize?client_id=${kickClientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=kick_auth&code_challenge=${challenge}&code_challenge_method=S256`;
     
-    // 2. Open login popup
-    const authUrl = `https://chat.kick.cx/auth-popup`;
-    window.open(authUrl, 'KickAuth', 'width=500,height=600,status=no,menubar=no,resizable=yes');
-    
-    // 3. Direct Login (No more prompts)
-    loginKick({ 
-        username: finalUsername, 
-        profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${finalUsername}`, 
-        token: 'active-session' 
-    });
-    
-    setIsAuthOpen(false);
+    window.open(authUrl, 'KickAuth', 'width=500,height=700,status=no,menubar=no,resizable=yes');
   };
 
   return (
@@ -295,7 +354,7 @@ export const Header: React.FC = () => {
                                 <span>Sign in with Twitch</span>
                             </button>
                             <div className="absolute -left-52 top-0 w-48 bg-[#0e0e10] border border-white/10 p-2.5 rounded-md text-[9px] text-neutral-400 opacity-0 group-hover/twitch:opacity-100 pointer-events-none transition-all z-100 shadow-2xl">
-                                <span className="text-twitch font-black block mb-1 uppercase tracking-widest text-[#9146ff]">Conexão Segura</span>
+                                <span className="text-twitch font-black block mb-1 uppercase tracking-widest">Conexão Segura</span>
                                 Sua conta de desenvolvedor oficial está ativa. O login será processado sem redirecionamentos externos.
                             </div>
                         </div>
@@ -312,7 +371,7 @@ export const Header: React.FC = () => {
                                 <span>Sign in with Kick</span>
                             </button>
                             <div className="absolute -left-52 top-0 w-48 bg-[#0e0e10] border border-white/10 p-2.5 rounded-md text-[9px] text-neutral-400 opacity-0 group-hover/kick:opacity-100 pointer-events-none transition-all z-100 shadow-2xl">
-                                <span className="text-kick font-black block mb-1 uppercase tracking-widest text-[#00e701]">Sessão Direta</span>
+                                <span className="text-kick font-black block mb-1 uppercase tracking-widest">Sessão Direta</span>
                                 O login abre a janela oficial. O perfil é sincronizado automaticamente com sua live ativa.
                             </div>
                         </div>

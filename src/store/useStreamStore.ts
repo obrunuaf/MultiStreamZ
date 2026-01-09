@@ -46,6 +46,7 @@ interface StreamState {
     kick: { username: string; profileImage: string; token: string } | null;
   };
   customClientId: string;
+  kickClientId: string;
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
@@ -71,6 +72,7 @@ interface StreamState {
   loginKick: (data: { username: string; profileImage: string; token: string }) => void;
   logoutKick: () => void;
   setCustomClientId: (id: string) => void;
+  setKickClientId: (id: string) => void;
   updateStreamMetadata: (id: string, metadata: Partial<Stream['metadata']>) => void;
   validateAndAddStream: (input: string) => Promise<boolean>;
 }
@@ -127,6 +129,7 @@ export const useStreamStore = create<StreamState>()(
         kick: null,
       },
       customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof',
+      kickClientId: '01KEJ794H7E71R2YZKFYZCYDDV',
 
       addStream: (urlOrName) => set((state) => {
         const parsed = parseStreamInput(urlOrName);
@@ -264,6 +267,7 @@ export const useStreamStore = create<StreamState>()(
       loginKick: (data) => set((state) => ({ auth: { ...state.auth, kick: data } })),
       logoutKick: () => set((state) => ({ auth: { ...state.auth, kick: null } })),
       setCustomClientId: (id) => set({ customClientId: id }),
+      setKickClientId: (id) => set({ kickClientId: id }),
       updateStreamMetadata: (id, metadata) => set((state) => ({
         streams: state.streams.map(s => s.id === id ? { 
           ...s, 
@@ -323,6 +327,7 @@ export const useStreamStore = create<StreamState>()(
         flexLayoutState: state.flexLayoutState,
         auth: state.auth,
         customClientId: state.customClientId,
+        kickClientId: state.kickClientId,
       }),
     }
   )
