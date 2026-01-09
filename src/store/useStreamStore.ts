@@ -126,7 +126,7 @@ export const useStreamStore = create<StreamState>()(
         twitch: null,
         kick: null,
       },
-      customClientId: 'gp762nuuoqcoxypju8c569th9wz7q5',
+      customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof',
 
       addStream: (urlOrName) => set((state) => {
         const parsed = parseStreamInput(urlOrName);

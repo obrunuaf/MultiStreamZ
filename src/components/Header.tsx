@@ -1,4 +1,4 @@
-import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
@@ -293,15 +293,10 @@ export const Header: React.FC = () => {
                             >
                                 <Twitch size={16} fill="currentColor" />
                                 <span>Sign in with Twitch</span>
-                                {customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5' && (
-                                    <AlertTriangle size={12} className="text-yellow-400 animate-pulse" />
-                                )}
                             </button>
                             <div className="absolute -left-52 top-0 w-48 bg-[#0e0e10] border border-white/10 p-2.5 rounded-md text-[9px] text-neutral-400 opacity-0 group-hover/twitch:opacity-100 pointer-events-none transition-all z-100 shadow-2xl">
-                                <span className="text-yellow-400 font-black block mb-1 uppercase tracking-widest">Aviso de Produção</span>
-                                {customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5' 
-                                    ? "Você está usando um ID genérico. Configure seu próprio Client ID nas configurações para remover o aviso de redirecionamento da Twitch."
-                                    : "Configuração segura detectada. Se o aviso persistir, verifique suas URLs de redirecionamento no Dashboard da Twitch."}
+                                <span className="text-twitch font-black block mb-1 uppercase tracking-widest text-[#9146ff]">Conexão Segura</span>
+                                Sua conta de desenvolvedor oficial está ativa. O login será processado sem redirecionamentos externos.
                             </div>
                         </div>
 
