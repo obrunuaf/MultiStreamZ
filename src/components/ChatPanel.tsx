@@ -18,7 +18,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
       return `https://www.twitch.tv/embed/${stream.channelName}/chat?parent=${window.location.hostname}&darkpopout`;
     }
     if (stream.platform === 'kick') {
-      return `https://kick.com/${stream.channelName}/chatroom`;
+      return `https://kick.com/popout/${stream.channelName}/chat`;
     }
     return '';
   };

@@ -135,13 +135,14 @@ export const Header: React.FC = () => {
       // Kick Success
       if (event.data?.type === 'KICK_AUTH_SUCCESS') {
         const token = event.data.token;
+        console.log('Kick Handshake: Token received, fetching profile...');
         // Fetch Kick User Profile (Official API)
         fetch('https://api.kick.com/public/v1/users', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(res => res.json())
         .then(data => {
-            // Adjust according to real Kick API response structure
+            console.log('Kick Profile Data:', data);
             if (data) {
                 loginKick({
                     username: data.name || data.username,
@@ -166,17 +167,21 @@ export const Header: React.FC = () => {
     const state = params.get('state');
 
     if (code && state === 'kick_auth' && window.opener) {
-        const verifier = sessionStorage.getItem('kick_code_verifier');
-        if (!verifier) return;
+        console.log('Kick Callback: Code detected, initiating exchange...');
+        const verifier = localStorage.getItem('kick_code_verifier');
+        if (!verifier) {
+          console.error('Kick Error: Code verifier missing in localStorage');
+          return;
+        }
 
-        const { kickClientId } = useStreamStore.getState();
+        const OFFICIAL_KICK_ID = '01KEJ794H7E71R2YZKFYZCYDDV';
 
         // Exchange code for token
         fetch('https://id.kick.com/oauth/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
-                client_id: kickClientId,
+                client_id: OFFICIAL_KICK_ID,
                 grant_type: 'authorization_code',
                 code,
                 redirect_uri: window.location.origin,
@@ -185,9 +190,13 @@ export const Header: React.FC = () => {
         })
         .then(res => res.json())
         .then(data => {
+            console.log('Kick Token Data:', data);
             if (data.access_token) {
+                localStorage.removeItem('kick_code_verifier');
                 window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, window.location.origin);
-                window.close();
+                setTimeout(() => window.close(), 500); // Small delay to ensure message sent
+            } else {
+                console.error('Kick Token Exchange Failed:', data);
             }
         })
         .catch(err => console.error('Kick Token Exchange Error:', err));
@@ -252,7 +261,7 @@ export const Header: React.FC = () => {
 
     const verifier = await generateCodeVerifier();
     const challenge = await generateCodeChallenge(verifier);
-    sessionStorage.setItem('kick_code_verifier', verifier);
+    localStorage.setItem('kick_code_verifier', verifier);
 
     const REDIRECT_URI = window.location.origin;
     const scope = encodeURIComponent('user:read chat:write');
