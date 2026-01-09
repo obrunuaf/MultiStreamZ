@@ -3,6 +3,8 @@ import { useStreamStore } from '../store/useStreamStore';
 import { ChevronLeft } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { MapPanel } from './MapPanel';
+import { SidebarStreamList } from './SidebarStreamList';
+import { useState } from 'react';
 
 export const Sidebar: React.FC = () => {
   const { 
@@ -14,6 +16,7 @@ export const Sidebar: React.FC = () => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizingSidebar = useRef(false);
   const isResizingMap = useRef(false);
+  const [activeTab, setActiveTab] = useState<'monitor' | 'chat'>('chat');
 
 
   useEffect(() => {
@@ -82,33 +85,49 @@ export const Sidebar: React.FC = () => {
         }}
       />
 
-      {/* Map Panel */}
+      {/* Sidebar Content Tabs */}
+      <div className="flex items-center border-b border-white/5 bg-black/20">
+         <button 
+           onClick={() => setActiveTab('chat')}
+           className={`flex-1 py-3 text-[9px] font-black uppercase tracking-[0.2em] transition-all border-b-2 ${
+             activeTab === 'chat' ? 'text-white border-white' : 'text-neutral-600 border-transparent hover:text-neutral-400'
+           }`}
+         >
+           Chat Global
+         </button>
+         <button 
+           onClick={() => setActiveTab('monitor')}
+           className={`flex-1 py-3 text-[9px] font-black uppercase tracking-[0.2em] transition-all border-b-2 ${
+             activeTab === 'monitor' ? 'text-white border-white' : 'text-neutral-600 border-transparent hover:text-neutral-400'
+           }`}
+         >
+           Monitoring
+         </button>
+      </div>
+
+      {/* Map Panel (Always on top if visible) */}
       {mapVisible && (
         <div 
           className="relative flex flex-col bg-background overflow-hidden border-b border-border"
-          style={{ height: chatVisible ? `${mapHeight}px` : '100%' }}
+          style={{ height: `${mapHeight}px` }}
         >
           <MapPanel showCloseButton onClose={toggleMap} />
           
-          {/* Map Resize Handle */}
-          {chatVisible && (
-            <div 
-              className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize hover:bg-blue-500/50 transition-colors z-50"
-              onMouseDown={() => {
-                isResizingMap.current = true;
-                document.body.style.cursor = 'row-resize';
-              }}
-            />
-          )}
+          <div 
+            className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize hover:bg-neutral-500 transition-colors z-50"
+            onMouseDown={() => {
+              isResizingMap.current = true;
+              document.body.style.cursor = 'row-resize';
+            }}
+          />
         </div>
       )}
 
-      {/* Chat Panel */}
-      {chatVisible && (
-        <div className="flex-1 flex flex-col bg-background overflow-hidden relative">
-          <ChatPanel showCloseButton onClose={toggleChat} />
-        </div>
-      )}
+      {/* Active Tab Panel */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {activeTab === 'chat' && chatVisible && <ChatPanel showCloseButton onClose={toggleChat} />}
+        {activeTab === 'monitor' && <SidebarStreamList />}
+      </div>
 
     </aside>
     {toggleButton}

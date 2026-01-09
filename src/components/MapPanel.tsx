@@ -18,10 +18,23 @@ export const MapPanel: React.FC<MapPanelProps> = ({ showCloseButton, onClose }) 
 
   const getMapUrl = () => {
     if (customMapUrl) return customMapUrl;
-    if (activeStream && activeStream.platform === 'twitch') {
-      return `https://atlas.rtirl.com/?streamer=${activeStream.channelName}`;
+    
+    // Mapping for test streamers
+    const streamerMapIds: Record<string, string> = {
+      'jonvlogs': 'twitch:103989988',
+      'shevii2k': 'twitch:119611214',
+      'linsjr': 'twitch:264931435'
+    };
+
+    if (activeStream) {
+      const channelLower = activeStream.channelName.toLowerCase();
+      if (streamerMapIds[channelLower]) {
+        return `https://rtirl.com/${streamerMapIds[channelLower]}`;
+      }
+      return `https://rtirl.com/${activeStream.platform}:${activeStream.channelName}`;
     }
-    return 'https://atlas.rtirl.com/';
+    
+    return 'https://rtirl.com/';
   };
 
   const handleSaveMap = (e: React.FormEvent) => {

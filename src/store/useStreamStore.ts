@@ -12,6 +12,14 @@ export interface Stream {
   isMuted: boolean;
   volume: number;
   reloadKey: number;
+  metadata?: {
+    isLive: boolean;
+    viewerCount: number;
+    gameName?: string;
+    title?: string;
+    profileImage?: string;
+    lastUpdated: number;
+  };
 }
 
 interface GridProportions {
@@ -63,6 +71,8 @@ interface StreamState {
   loginKick: (data: { username: string; profileImage: string; token: string }) => void;
   logoutKick: () => void;
   setCustomClientId: (id: string) => void;
+  updateStreamMetadata: (id: string, metadata: Partial<Stream['metadata']>) => void;
+  validateAndAddStream: (input: string) => Promise<boolean>;
 }
 
 const isValidStreamInput = (input: string): boolean => {
@@ -254,6 +264,47 @@ export const useStreamStore = create<StreamState>()(
       loginKick: (data) => set((state) => ({ auth: { ...state.auth, kick: data } })),
       logoutKick: () => set((state) => ({ auth: { ...state.auth, kick: null } })),
       setCustomClientId: (id) => set({ customClientId: id }),
+      updateStreamMetadata: (id, metadata) => set((state) => ({
+        streams: state.streams.map(s => s.id === id ? { 
+          ...s, 
+          metadata: { ...(s.metadata || { isLive: false, viewerCount: 0, lastUpdated: 0 }), ...metadata, lastUpdated: Date.now() } 
+        } : s)
+      })),
+      validateAndAddStream: async (input) => {
+        const parsed = parseStreamInput(input);
+        if (!parsed) return false;
+
+        const { channelName, platform } = parsed;
+        
+        // Basic check: avoid duplicates
+        const currentStreams = useStreamStore.getState().streams;
+        if (currentStreams.some(s => s.channelName.toLowerCase() === channelName.toLowerCase() && s.platform === platform)) {
+            return false;
+        }
+
+        // Real-time Validation (Market Standard)
+        try {
+            if (platform === 'twitch') {
+                const clientId = useStreamStore.getState().customClientId;
+                const token = useStreamStore.getState().auth.twitch?.token;
+                const res = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+                    headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token || ''}` }
+                });
+                const data = await res.json();
+                if (!data.data || data.data.length === 0) return false;
+            } else if (platform === 'kick') {
+                const res = await fetch(`https://kick.com/api/v1/channels/${channelName}`);
+                if (!res.ok) return false;
+            }
+            
+            useStreamStore.getState().addStream(input);
+            return true;
+        } catch (e) {
+            console.error('Validation failed', e);
+            useStreamStore.getState().addStream(input); // Fallback to add anyway if API fails
+            return true;
+        }
+      }
     }),
     {
       name: 'stream-panel-storage',

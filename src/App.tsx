@@ -4,9 +4,11 @@ import { Sidebar } from './components/Sidebar';
 import { StreamGrid } from './components/StreamGrid';
 import { IframePortalLayer } from './components/IframePortalLayer';
 import { useStreamStore } from './store/useStreamStore';
+import { useMetadataSync } from './hooks/useMetadataSync';
 
 function App() {
   const { streams, addStream, layoutType } = useStreamStore();
+  useMetadataSync(); // Global metadata background sync
 
   // Load initial streams if empty (just for demo purposes)
   useEffect(() => {
@@ -14,7 +16,7 @@ function App() {
       addStream('https://www.twitch.tv/jonvlogs');
       addStream('https://www.twitch.tv/sheviii2k');
       addStream('https://www.twitch.tv/linsjr');
-      addStream('https://kick.com/linsjr');
+      addStream('https://kick.com/stereonline');
     }
   }, [streams.length, addStream]);
 

@@ -18,7 +18,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
       return `https://www.twitch.tv/embed/${stream.channelName}/chat?parent=${window.location.hostname}&darkpopout`;
     }
     if (stream.platform === 'kick') {
-      return `https://kick.com/chat/${stream.channelName}`;
+      return `https://chat.kick.cx/embed/${stream.channelName}?compact=false`;
     }
     return '';
   };
@@ -27,7 +27,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
     if (!activeStream) return;
     const url = activeStream.platform === 'twitch' 
       ? `https://www.twitch.tv/popout/${activeStream.channelName}/chat?darkpopout`
-      : `https://kick.com/chat/${activeStream.channelName}`;
+      : `https://chat.kick.cx/embed/${activeStream.channelName}`;
     
     window.open(url, '_blank', 'width=400,height=600,location=no,menubar=no,status=no,toolbar=no');
   };
