@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useStreamStore } from '../store/useStreamStore';
-import { X, RefreshCw, Trash2, Layout, Info, Settings } from 'lucide-react';
+import { X, RefreshCw, Trash2, Layout, Info, Settings, Zap } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -60,6 +60,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="text-[10px] text-neutral-500">Voltar para a grade padrão e limpar proporções</div>
                 </div>
                 <RefreshCw size={16} className="text-neutral-600 group-hover:text-neutral-300 transition-colors" />
+              </button>
+            </div>
+          </div>
+
+          {/* Section: Performance */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter flex items-center gap-2">
+              <Zap size={12} className="text-yellow-500" /> Performance
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
+              <button 
+                onClick={() => useStreamStore.getState().setHighPerformanceMode(!useStreamStore.getState().highPerformanceMode)}
+                className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all group"
+              >
+                <div className="text-left">
+                  <div className="text-sm font-medium text-neutral-200">Alto Desempenho</div>
+                  <div className="text-[10px] text-neutral-500">Evita economia de energia e lentidão ao mudar de aba</div>
+                </div>
+                <div className={`w-8 h-4 rounded-full relative transition-colors ${useStreamStore.getState().highPerformanceMode ? 'bg-yellow-500' : 'bg-neutral-800'}`}>
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${useStreamStore.getState().highPerformanceMode ? 'left-4.5' : 'left-0.5'}`} />
+                </div>
               </button>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { StreamGrid } from './components/StreamGrid';
 import { IframePortalLayer } from './components/IframePortalLayer';
 import { useStreamStore } from './store/useStreamStore';
 import { useMetadataSync } from './hooks/useMetadataSync';
+import { stayAlive } from './utils/stayAlive';
 
 function App() {
   const { streams, addStream, layoutType } = useStreamStore();
@@ -19,6 +20,17 @@ function App() {
       addStream('https://kick.com/stereonline');
     }
   }, [streams.length, addStream]);
+
+  // Handle High Performance (Anti-Throttling) Mode
+  const highPerformanceMode = useStreamStore(state => state.highPerformanceMode);
+  useEffect(() => {
+    if (highPerformanceMode) {
+      stayAlive.enable();
+    } else {
+      stayAlive.disable();
+    }
+    return () => stayAlive.disable();
+  }, [highPerformanceMode]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-neutral-200">

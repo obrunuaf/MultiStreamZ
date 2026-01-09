@@ -47,6 +47,7 @@ interface StreamState {
   };
   customClientId: string;
   kickClientId: string;
+  highPerformanceMode: boolean;
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
@@ -73,6 +74,7 @@ interface StreamState {
   logoutKick: () => void;
   setCustomClientId: (id: string) => void;
   setKickClientId: (id: string) => void;
+  setHighPerformanceMode: (enabled: boolean) => void;
   updateStreamMetadata: (id: string, metadata: Partial<Stream['metadata']>) => void;
   validateAndAddStream: (input: string) => Promise<boolean>;
 }
@@ -130,6 +132,7 @@ export const useStreamStore = create<StreamState>()(
       },
       customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof',
       kickClientId: '01KEJ794H7E71R2YZKFYZCYDDV',
+      highPerformanceMode: true,
 
       // Migration check: If the old generic ID is found in storage, reset it to the official one
       _migrateId: () => {
@@ -274,8 +277,9 @@ export const useStreamStore = create<StreamState>()(
       logoutTwitch: () => set((state) => ({ auth: { ...state.auth, twitch: null } })),
       loginKick: (data) => set((state) => ({ auth: { ...state.auth, kick: data } })),
       logoutKick: () => set((state) => ({ auth: { ...state.auth, kick: null } })),
-      setCustomClientId: (id) => set({ customClientId: id }),
-      setKickClientId: (id) => set({ kickClientId: id }),
+      setCustomClientId: (id: string) => set({ customClientId: id }),
+      setKickClientId: (id: string) => set({ kickClientId: id }),
+      setHighPerformanceMode: (highPerformanceMode: boolean) => set({ highPerformanceMode }),
       updateStreamMetadata: (id, metadata) => set((state) => ({
         streams: state.streams.map(s => s.id === id ? { 
           ...s, 
@@ -336,6 +340,7 @@ export const useStreamStore = create<StreamState>()(
         auth: state.auth,
         customClientId: state.customClientId,
         kickClientId: state.kickClientId,
+        highPerformanceMode: state.highPerformanceMode,
       }),
     }
   )
