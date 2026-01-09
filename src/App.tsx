@@ -2,10 +2,11 @@ import { useEffect } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { StreamGrid } from './components/StreamGrid';
+import { IframePortalLayer } from './components/IframePortalLayer';
 import { useStreamStore } from './store/useStreamStore';
 
 function App() {
-  const { streams, addStream } = useStreamStore();
+  const { streams, addStream, layoutType } = useStreamStore();
 
   // Load initial streams if empty (just for demo purposes)
   useEffect(() => {
@@ -21,10 +22,12 @@ function App() {
     <div className="flex flex-col h-screen bg-background text-neutral-200">
       <Header />
       
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden flex-row">
         <StreamGrid />
-        <Sidebar />
+        {layoutType !== 'interactive' && <Sidebar />}
       </main>
+
+      <IframePortalLayer />
 
       {/* Footer / Status Bar */}
       <footer className="h-6 border-t border-border bg-panel px-3 flex items-center justify-between text-[10px] text-neutral-500 font-medium z-50">
@@ -37,7 +40,7 @@ function App() {
           <span className="text-[10px] font-bold text-neutral-400 uppercase">{streams.length} LIVES ATIVAS</span>
         </div>
         <div className="flex items-center gap-3 italic font-black text-[10px] text-neutral-600 uppercase tracking-tighter">
-          <span>MULTISTREAMZ v2.0.0-PREVIEW</span>
+          <span>MULTISTREAMZ v3.2.0-STABLE</span>
         </div>
       </footer>
     </div>

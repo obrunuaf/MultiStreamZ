@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { 
   DndContext, 
   closestCenter,
@@ -5,6 +6,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragMoveEvent,
+  type DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
@@ -14,11 +18,17 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useStreamStore } from '../store/useStreamStore';
-import { StreamTile } from './StreamTile';
-import { Plus } from 'lucide-react';
+import { StreamSlot } from './StreamSlot';
+import { FlexGrid } from './FlexGrid';
+import { SnapFlyout } from './SnapFlyout';
+import { Plus, GripHorizontal } from 'lucide-react';
 
 export const StreamGrid: React.FC = () => {
-  const { streams, featuredStreamId, layoutType, reorderStreams, setFeaturedStream } = useStreamStore();
+  const { streams, layoutType, reorderStreams, setFeaturedStream, setLayoutType } = useStreamStore();
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [showSnapFlyout, setShowSnapFlyout] = useState(false);
+  const [ghostLayout, setGhostLayout] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -31,7 +41,25 @@ export const StreamGrid: React.FC = () => {
     })
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    const { clientY } = event.activatorEvent as MouseEvent;
+    
+    // Show flyout if dragging near top
+    const shouldShow = clientY < 100;
+    if (shouldShow !== showSnapFlyout) {
+      setShowSnapFlyout(shouldShow);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    setShowSnapFlyout(false);
+    setGhostLayout(null);
+
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -41,8 +69,6 @@ export const StreamGrid: React.FC = () => {
       
       reorderStreams(newStreams);
       
-      // If we are in a layout that uses a featured stream, 
-      // the one at index 0 is now the featured one.
       if (layoutType === 'featured' || layoutType === 'sidebar') {
         setFeaturedStream(newStreams[0].id);
       }
@@ -61,90 +87,121 @@ export const StreamGrid: React.FC = () => {
     );
   }
 
-  const featuredStream = streams[0];
-  const otherStreams = streams.slice(1);
-
-  const renderContent = () => {
-    // Layout: FEATURED
-    if (layoutType === 'featured' && featuredStream && otherStreams.length > 0) {
-      return (
-        <div className="flex-1 flex flex-col md:flex-row gap-0.5 p-0.5 bg-border/20 overflow-hidden">
-          <div className="flex-3 min-h-[50%] md:min-h-0">
-            <StreamTile stream={featuredStream} isFeatured={true} />
-          </div>
-          <div className={`flex-1 grid gap-0.5 overflow-y-auto ${
-            otherStreams.length <= 2 ? 'grid-cols-1' : 'grid-cols-2'
-          }`}>
-            {otherStreams.map((stream) => (
-              <StreamTile key={stream.id} stream={stream} isFeatured={false} />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // Layout: SIDEBAR (Vertical list on the right)
-    if (layoutType === 'sidebar' && featuredStream && otherStreams.length > 0) {
-      return (
-        <div className="flex-1 flex flex-col md:flex-row gap-0.5 p-0.5 bg-border/20 overflow-hidden">
-          <div className="flex-4 h-full">
-            <StreamTile stream={featuredStream} isFeatured={true} />
-          </div>
-          <div className="flex-1 flex flex-col gap-0.5 overflow-y-auto min-w-60">
-            {otherStreams.map((stream) => (
-              <div key={stream.id} className="aspect-video w-full shrink-0">
-                <StreamTile stream={stream} isFeatured={false} />
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // Layout: COLUMNS (Equal vertical columns)
-    if (layoutType === 'columns') {
-      return (
-        <div className="flex-1 flex flex-row gap-0.5 p-0.5 bg-border/20 overflow-x-auto">
-          {streams.map((stream) => (
-            <div key={stream.id} className="flex-1 min-w-75 h-full">
-              <StreamTile stream={stream} isFeatured={stream.id === featuredStreamId} />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // Layout: GRID (Balanced)
-    const getGridClass = () => {
-      const count = streams.length;
+  const getGridClass = () => {
+    const count = streams.length;
+    if (layoutType === 'grid') {
       if (count === 1) return 'grid-cols-1 grid-rows-1';
       if (count === 2) return 'grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1';
       if (count <= 4) return 'grid-cols-2 grid-rows-2';
       if (count <= 6) return 'grid-cols-2 md:grid-cols-3 grid-rows-3 md:grid-rows-2';
       return 'grid-cols-3 grid-rows-3';
-    };
-
-    return (
-      <div className={`flex-1 grid gap-0.5 p-0.5 bg-border/20 ${getGridClass()}`}>
-        {streams.map((stream) => (
-          <StreamTile key={stream.id} stream={stream} isFeatured={stream.id === featuredStreamId} />
-        ))}
-      </div>
-    );
+    }
+    if (layoutType === 'featured') return 'layout-featured';
+    if (layoutType === 'sidebar') return 'layout-sidebar';
+    if (layoutType === 'columns') return 'layout-columns';
+    return '';
   };
 
+  if (layoutType === 'interactive') {
+    return <FlexGrid />;
+  }
+
+  // To prevent iframe reloads, we keep the SLOTS stable in the DOM.
+  // The iframes are in a separate layer, synchronized with these slots.
+  const stableStreams = [...streams].sort((a, b) => a.id.localeCompare(b.id));
+  const activeStream = streams.find(s => s.id === activeId);
+  
   return (
     <DndContext 
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext 
-        items={streams.map(s => s.id)}
-        strategy={rectSortingStrategy}
+      <div 
+        className={`flex-1 transition-all duration-500 stream-grid-container relative ${getGridClass()}`}
       >
-        {renderContent()}
-      </SortableContext>
+        <SnapFlyout 
+          isVisible={showSnapFlyout}
+          onHoverLayout={setGhostLayout}
+          onSelectLayout={(id) => {
+            setLayoutType(id as 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive');
+            setShowSnapFlyout(false);
+          }}
+        />
+
+        {ghostLayout && (
+          <div 
+            className="ghost-preview"
+            style={{
+              inset: ghostLayout === 'featured' ? '4px 25% 4px 4px' : 
+                     ghostLayout === 'sidebar' ? '4px 4px 4px 75%' : 
+                     '4px',
+              width: ghostLayout === 'featured' ? '75%' : 
+                     ghostLayout === 'sidebar' ? '25%' : 'auto',
+              left: ghostLayout === 'sidebar' ? '75%' : '4px',
+              height: 'calc(100% - 8px)'
+            }}
+          />
+        )}
+
+        <SortableContext 
+          items={streams.map(s => s.id)}
+          strategy={rectSortingStrategy}
+        >
+          {stableStreams.map((stream) => {
+            const logicalIndex = streams.findIndex(s => s.id === stream.id);
+            const isFeatured = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex === 0;
+            const isSidebarItem = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex > 0;
+
+            const slotStyle: React.CSSProperties = {
+              order: logicalIndex,
+              opacity: activeId === stream.id ? 0.3 : 1,
+            };
+
+            // Dynamic grid positioning for featured/sidebar layouts
+            if (layoutType === 'featured') {
+              if (isFeatured) {
+                slotStyle.gridColumn = '1';
+                slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+              } else {
+                slotStyle.gridColumn = '2';
+              }
+            } else if (layoutType === 'sidebar') {
+              if (isFeatured) {
+                slotStyle.gridColumn = '2';
+                slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+              } else {
+                slotStyle.gridColumn = '1';
+              }
+            }
+
+            return (
+              <div 
+                key={stream.id} 
+                className={`transition-all duration-300 w-full h-full relative min-h-0 min-w-0 ${
+                  isFeatured ? 'tile-featured' : 
+                  isSidebarItem ? 'tile-sidebar' : ''
+                }`}
+                style={slotStyle}
+              >
+                <StreamSlot stream={stream} />
+              </div>
+            );
+          })}
+        </SortableContext>
+
+        <DragOverlay adjustScale={false}>
+          {activeId && activeStream ? (
+            <div className="w-64 h-36 bg-surface/80 border-2 border-primary/50 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl backdrop-blur-xl ring-4 ring-primary/10">
+              <GripHorizontal size={24} className="text-primary mb-2 animate-bounce" />
+              <span className="text-xs font-black text-white uppercase tracking-widest">{activeStream.channelName}</span>
+              <span className="text-[10px] text-primary font-bold uppercase">{activeStream.platform}</span>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </div>
     </DndContext>
   );
 };

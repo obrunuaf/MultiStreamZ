@@ -11,6 +11,12 @@ export interface Stream {
   url: string;
   isMuted: boolean;
   volume: number;
+  reloadKey: number;
+}
+
+interface GridProportions {
+  columns: number[]; // percentages
+  rows: number[];    // percentages
 }
 
 interface StreamState {
@@ -21,20 +27,40 @@ interface StreamState {
   sidebarWidth: number;
   mapHeight: number;
   featuredStreamId: string | null;
-  layoutType: 'grid' | 'featured' | 'sidebar' | 'columns';
+  activeChatStreamId: string | null;
+  customMapUrl: string;
+  layoutType: 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive';
+  gridProportions: GridProportions;
+  streamRects: Record<string, { top: number; left: number; width: number; height: number }>;
+  flexLayoutState: string | null;
+  auth: {
+    twitch: { username: string; profileImage: string; token: string } | null;
+    kick: { username: string; profileImage: string; token: string } | null;
+  };
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
   reorderStreams: (streams: Stream[]) => void;
+  updateGridProportion: (type: 'columns' | 'rows', index: number, value: number) => void;
   setFeaturedStream: (id: string | null) => void;
-  setLayoutType: (layout: 'grid' | 'featured' | 'sidebar' | 'columns') => void;
+  setActiveChatStream: (id: string | null) => void;
+  setCustomMapUrl: (url: string) => void;
+  setLayoutType: (layout: 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive') => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
   toggleMap: () => void;
   setStreamVolume: (id: string, volume: number) => void;
   toggleStreamMute: (id: string) => void;
+  reloadStream: (id: string) => void;
+  resetLayout: () => void;
   setSidebarWidth: (width: number) => void;
   setMapHeight: (height: number) => void;
+  setStreamRect: (id: string, rect: { top: number; left: number; width: number; height: number } | null) => void;
+  setFlexLayoutState: (state: string) => void;
+  loginTwitch: (data: { username: string; profileImage: string; token: string }) => void;
+  logoutTwitch: () => void;
+  loginKick: (data: { username: string; profileImage: string; token: string }) => void;
+  logoutKick: () => void;
 }
 
 const isValidStreamInput = (input: string): boolean => {
@@ -75,7 +101,19 @@ export const useStreamStore = create<StreamState>()(
       sidebarWidth: 360,
       mapHeight: 300,
       featuredStreamId: null,
+      activeChatStreamId: null,
+      customMapUrl: '',
       layoutType: 'grid',
+      gridProportions: {
+        columns: [50, 50],
+        rows: [50, 50]
+      },
+      streamRects: {},
+      flexLayoutState: null,
+      auth: {
+        twitch: null,
+        kick: null,
+      },
 
       addStream: (urlOrName) => set((state) => {
         const parsed = parseStreamInput(urlOrName);
@@ -98,38 +136,75 @@ export const useStreamStore = create<StreamState>()(
           url,
           isMuted: false,
           volume: 0.5,
+          reloadKey: 0,
         };
         const nextStreams = [...state.streams, newStream];
         return { 
           streams: nextStreams,
-          featuredStreamId: state.featuredStreamId || newStream.id 
+          featuredStreamId: state.featuredStreamId || newStream.id,
+          activeChatStreamId: state.activeChatStreamId || newStream.id
         };
       }),
 
       removeStream: (id) => set((state) => {
         const nextStreams = state.streams.filter((s) => s.id !== id);
+        let nextChatId = state.activeChatStreamId;
+        
+        if (state.activeChatStreamId === id) {
+          nextChatId = nextStreams[0]?.id || null;
+        }
+
         return {
           streams: nextStreams,
-          featuredStreamId: state.featuredStreamId === id ? (nextStreams[0]?.id || null) : state.featuredStreamId
+          featuredStreamId: state.featuredStreamId === id ? (nextStreams[0]?.id || null) : state.featuredStreamId,
+          activeChatStreamId: nextChatId
         };
       }),
 
       reorderStreams: (streams) => set({ streams }),
+
+      updateGridProportion: (type, index, value) => set((state) => {
+        const next = [...state.gridProportions[type]];
+        next[index] = value;
+        // Adjust adjacent proportion to keep sum 100
+        if (index < next.length - 1) {
+          const diff = value - state.gridProportions[type][index];
+          next[index + 1] = Math.max(10, next[index + 1] - diff);
+        }
+        return {
+          gridProportions: {
+            ...state.gridProportions,
+            [type]: next
+          }
+        };
+      }),
       
       setFeaturedStream: (id) => set((state) => {
         if (!id) return { featuredStreamId: null };
-        const newStreams = [...state.streams];
-        const index = newStreams.findIndex(s => s.id === id);
+        
+        // Auto-mute others, unmute featured
+        const updatedStreams = state.streams.map(s => ({
+          ...s,
+          isMuted: s.id !== id
+        }));
+        
+        const index = updatedStreams.findIndex(s => s.id === id);
         if (index > -1) {
-          const [stream] = newStreams.splice(index, 1);
-          newStreams.unshift(stream);
+          const [stream] = updatedStreams.splice(index, 1);
+          updatedStreams.unshift(stream);
         }
+        
         return { 
           featuredStreamId: id, 
-          streams: newStreams,
+          activeChatStreamId: id,
+          streams: updatedStreams,
           layoutType: state.layoutType === 'grid' ? 'featured' : state.layoutType 
         };
       }),
+
+      setActiveChatStream: (id) => set({ activeChatStreamId: id }),
+
+      setCustomMapUrl: (customMapUrl) => set({ customMapUrl }),
 
       setLayoutType: (layoutType) => set({ layoutType }),
 
@@ -145,11 +220,54 @@ export const useStreamStore = create<StreamState>()(
         streams: state.streams.map((s) => s.id === id ? { ...s, isMuted: !s.isMuted } : s),
       })),
 
+      reloadStream: (id) => set((state) => ({
+        streams: state.streams.map((s) => s.id === id ? { ...s, reloadKey: s.reloadKey + 1 } : s),
+      })),
+
+      resetLayout: () => set({
+        gridProportions: {
+          columns: [50, 50],
+          rows: [50, 50]
+        },
+        layoutType: 'grid'
+      }),
+
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
       setMapHeight: (mapHeight) => set({ mapHeight }),
+      setStreamRect: (id, rect) => set((state) => {
+        const next = { ...state.streamRects };
+        if (rect === null) {
+          delete next[id];
+        } else {
+          next[id] = rect;
+        }
+        return { streamRects: next };
+      }),
+
+      setFlexLayoutState: (flexLayoutState) => set({ flexLayoutState }),
+
+      loginTwitch: (data) => set((state) => ({ auth: { ...state.auth, twitch: data } })),
+      logoutTwitch: () => set((state) => ({ auth: { ...state.auth, twitch: null } })),
+      loginKick: (data) => set((state) => ({ auth: { ...state.auth, kick: data } })),
+      logoutKick: () => set((state) => ({ auth: { ...state.auth, kick: null } })),
     }),
     {
       name: 'stream-panel-storage',
+      partialize: (state) => ({
+        streams: state.streams,
+        sidebarVisible: state.sidebarVisible,
+        chatVisible: state.chatVisible,
+        mapVisible: state.mapVisible,
+        sidebarWidth: state.sidebarWidth,
+        mapHeight: state.mapHeight,
+        featuredStreamId: state.featuredStreamId,
+        activeChatStreamId: state.activeChatStreamId,
+        customMapUrl: state.customMapUrl,
+        layoutType: state.layoutType,
+        gridProportions: state.gridProportions,
+        flexLayoutState: state.flexLayoutState,
+        auth: state.auth,
+      }),
     }
   )
 );

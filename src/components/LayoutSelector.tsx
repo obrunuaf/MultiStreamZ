@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStreamStore } from '../store/useStreamStore';
-import { LayoutGrid, Maximize, Columns, Layout } from 'lucide-react';
+import { LayoutGrid, Maximize, Columns, Layout, Monitor } from 'lucide-react';
 
 export const LayoutSelector: React.FC = () => {
   const { layoutType, setLayoutType } = useStreamStore();
@@ -10,6 +10,7 @@ export const LayoutSelector: React.FC = () => {
     { id: 'featured', icon: Maximize, label: 'Vista em Destaque' },
     { id: 'sidebar', icon: Layout, label: 'Foco na Lateral' },
     { id: 'columns', icon: Columns, label: 'Vista em Colunas' },
+    { id: 'interactive', icon: Monitor, label: 'Grade Interativa (Splitters)' },
   ] as const;
 
   return (
