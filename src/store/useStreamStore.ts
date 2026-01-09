@@ -131,6 +131,14 @@ export const useStreamStore = create<StreamState>()(
       customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof',
       kickClientId: '01KEJ794H7E71R2YZKFYZCYDDV',
 
+      // Migration check: If the old generic ID is found in storage, reset it to the official one
+      _migrateId: () => {
+        const state = useStreamStore.getState();
+        if (state.customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5') {
+          set({ customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof' });
+        }
+      },
+
       addStream: (urlOrName) => set((state) => {
         const parsed = parseStreamInput(urlOrName);
         

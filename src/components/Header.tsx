@@ -57,6 +57,11 @@ export const Header: React.FC = () => {
 
   // Check for OAuth Callback on mount (Handles both redirect and popup flows)
   useEffect(() => {
+    // Migration: Force official Twitch ID if generic one is cached
+    if (customClientId === 'gp762nuuoqcoxypju8c569th9wz7q5') {
+       useStreamStore.getState().setCustomClientId('6gu4wf1zdyfcxcgmedhazg3sswibof');
+    }
+
     const hash = window.location.hash;
 
     // Phase 1: Direct Hash Detection (Traditional Redirect or Inside Popup)
