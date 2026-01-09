@@ -37,6 +37,7 @@ interface StreamState {
     twitch: { username: string; profileImage: string; token: string } | null;
     kick: { username: string; profileImage: string; token: string } | null;
   };
+  customClientId: string;
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
@@ -61,6 +62,7 @@ interface StreamState {
   logoutTwitch: () => void;
   loginKick: (data: { username: string; profileImage: string; token: string }) => void;
   logoutKick: () => void;
+  setCustomClientId: (id: string) => void;
 }
 
 const isValidStreamInput = (input: string): boolean => {
@@ -114,6 +116,7 @@ export const useStreamStore = create<StreamState>()(
         twitch: null,
         kick: null,
       },
+      customClientId: 'gp762nuuoqcoxypju8c569th9wz7q5',
 
       addStream: (urlOrName) => set((state) => {
         const parsed = parseStreamInput(urlOrName);
@@ -250,6 +253,7 @@ export const useStreamStore = create<StreamState>()(
       logoutTwitch: () => set((state) => ({ auth: { ...state.auth, twitch: null } })),
       loginKick: (data) => set((state) => ({ auth: { ...state.auth, kick: data } })),
       logoutKick: () => set((state) => ({ auth: { ...state.auth, kick: null } })),
+      setCustomClientId: (id) => set({ customClientId: id }),
     }),
     {
       name: 'stream-panel-storage',
@@ -267,6 +271,7 @@ export const useStreamStore = create<StreamState>()(
         gridProportions: state.gridProportions,
         flexLayoutState: state.flexLayoutState,
         auth: state.auth,
+        customClientId: state.customClientId,
       }),
     }
   )

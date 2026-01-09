@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'; // Added useEffect import
 export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { addStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick } = useStreamStore();
+  const { addStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId } = useStreamStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,11 +20,10 @@ export const Header: React.FC = () => {
   };
 
   const handleTwitchLogin = () => {
-    // Real OAuth Redirect URL (using a placeholder Client ID)
-    const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5'; 
+    // Uses the ID from store (can be user-provided via settings)
     const REDIRECT_URI = window.location.origin;
     const scope = 'user:read:email';
-    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${scope}`;
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${customClientId}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${scope}`;
     
     window.location.href = authUrl;
   };
@@ -32,7 +31,6 @@ export const Header: React.FC = () => {
   // Check for OAuth Callback on mount
   useEffect(() => {
     const hash = window.location.hash;
-    const CLIENT_ID = 'gp762nuuoqcoxypju8c569th9wz7q5';
 
     if (hash.includes('access_token=')) {
       const params = new URLSearchParams(hash.substring(1));
@@ -43,7 +41,7 @@ export const Header: React.FC = () => {
         fetch('https://api.twitch.tv/helix/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Client-Id': CLIENT_ID
+            'Client-Id': customClientId
           }
         })
         .then(res => res.json())
@@ -66,7 +64,7 @@ export const Header: React.FC = () => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [loginTwitch, addStream]);
+  }, [loginTwitch, addStream, customClientId]);
 
   return (
     <header className="h-13 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-50">

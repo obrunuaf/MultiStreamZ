@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, X } from 'lucide-react';
+import { MessageSquare, X, ExternalLink } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 
 interface ChatPanelProps {
@@ -23,6 +23,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
     return '';
   };
 
+  const handlePopout = () => {
+    if (!activeStream) return;
+    const url = activeStream.platform === 'twitch' 
+      ? `https://www.twitch.tv/popout/${activeStream.channelName}/chat?darkpopout`
+      : `https://kick.com/chat/${activeStream.channelName}`;
+    
+    window.open(url, '_blank', 'width=400,height=600,location=no,menubar=no,status=no,toolbar=no');
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-background overflow-hidden relative h-full">
       <div className="flex flex-col border-b border-white/5 bg-panel/30">
@@ -31,11 +40,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
             <MessageSquare size={14} className="text-purple-400/50" />
             <span>CHAT AO VIVO</span>
           </div>
-          {showCloseButton && (
-            <button onClick={onClose || toggleChat} className="text-neutral-500 hover:text-white transition-colors p-1">
-              <X size={14} />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {activeStream && (
+                <button 
+                onClick={handlePopout} 
+                className="text-neutral-500 hover:text-white transition-colors p-1"
+                title="Abrir em nova janela (Popout)"
+                >
+                <ExternalLink size={14} />
+                </button>
+            )}
+            {showCloseButton && (
+                <button onClick={onClose || toggleChat} className="text-neutral-500 hover:text-white transition-colors p-1">
+                <X size={14} />
+                </button>
+            )}
+          </div>
         </div>
 
         {/* Chat Select Tabs */}

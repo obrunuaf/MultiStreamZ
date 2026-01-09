@@ -110,6 +110,18 @@
   backdrop-filter: blur(4px);
 }
 
+/* GPU Isolation for Portals (Opera/Blink Fix) */
+.iframe-portal-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.portal-inner {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
 .snap-flyout {
   background: rgba(20, 20, 20, 0.9);
   backdrop-filter: blur(12px);
