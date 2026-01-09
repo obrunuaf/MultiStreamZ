@@ -28,10 +28,11 @@ export const Header: React.FC = () => {
   };
 
   const handleTwitchLogin = () => {
-    // Market Standard: Use popup instead of redirect to preserve app state
+    // Force official ID to avoid cache/localStorage leaks of generic IDs
+    const OFFICIAL_TWITCH_ID = '6gu4wf1zdyfcxcgmedhazg3sswibof';
     const REDIRECT_URI = window.location.origin;
     const scope = encodeURIComponent('user:read:email chat:read chat:edit user:read:follows');
-    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${customClientId}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${scope}`;
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${OFFICIAL_TWITCH_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${scope}`;
     
     // Open a centered popup for Twitch Auth
     const width = 600;
@@ -105,6 +106,7 @@ export const Header: React.FC = () => {
     // Phase 2: Listen for messages (If this is the Parent window receiving from Popup)
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
+      console.log('Auth Message Received:', event.data);
       
       // Twitch Success
       if (event.data?.type === 'TWITCH_AUTH_SUCCESS') {
@@ -245,22 +247,18 @@ export const Header: React.FC = () => {
 
   // Direct Kick Login (Official OAuth 2.1 Flow)
   const handleKickLogin = async () => {
-    const { kickClientId } = useStreamStore.getState();
-    if (!kickClientId) {
-        setIsSettingsOpen(true);
-        alert('Por favor, configure seu Kick Client ID nas configurações primeiro.');
-        return;
-    }
+    // Force official ID
+    const OFFICIAL_KICK_ID = '01KEJ794H7E71R2YZKFYZCYDDV';
 
     const verifier = await generateCodeVerifier();
     const challenge = await generateCodeChallenge(verifier);
     sessionStorage.setItem('kick_code_verifier', verifier);
 
     const REDIRECT_URI = window.location.origin;
-    const scope = encodeURIComponent('user:read chat:write'); // Correctly typed scope
-    const authUrl = `https://id.kick.com/oauth/authorize?client_id=${kickClientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=kick_auth&code_challenge=${challenge}&code_challenge_method=S256`;
+    const scope = encodeURIComponent('user:read chat:write');
+    const authUrl = `https://id.kick.com/oauth/authorize?client_id=${OFFICIAL_KICK_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=kick_auth&code_challenge=${challenge}&code_challenge_method=S256`;
     
-    window.open(authUrl, 'KickAuth', 'width=500,height=700,status=no,menubar=no,resizable=yes');
+    window.open(authUrl, 'KickAuth', 'width=550,height=750,status=no,menubar=no,resizable=yes');
   };
 
   return (
