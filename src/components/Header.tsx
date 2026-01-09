@@ -187,6 +187,57 @@ export const Header: React.FC = () => {
     }
   }, []);
 
+  // Session Auto-Validation (Persistent Identity)
+  useEffect(() => {
+    // 1. Validate Twitch Session
+    if (auth.twitch?.token) {
+      fetch('https://api.twitch.tv/helix/users', {
+        headers: {
+          'Authorization': `Bearer ${auth.twitch.token}`,
+          'Client-Id': customClientId
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Twitch session expired');
+        return res.json();
+      })
+      .then(data => {
+        if (data.data && data.data[0]) {
+          const user = data.data[0];
+          loginTwitch({
+            username: user.display_name,
+            profileImage: user.profile_image_url,
+            token: auth.twitch!.token
+          });
+        }
+      })
+      .catch(() => logoutTwitch());
+    }
+
+    // 2. Validate Kick Session
+    if (auth.kick?.token) {
+      fetch('https://api.kick.com/public/v1/users', {
+        headers: { 'Authorization': `Bearer ${auth.kick.token}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Kick session expired');
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          loginKick({
+            username: data.name || data.username,
+            profileImage: data.profile_picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`,
+            token: auth.kick!.token
+          });
+        }
+      })
+      .catch(() => logoutKick());
+    }
+    // We only run this ONCE on mount to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Direct Kick Login (Official OAuth 2.1 Flow)
   const handleKickLogin = async () => {
     const { kickClientId } = useStreamStore.getState();
