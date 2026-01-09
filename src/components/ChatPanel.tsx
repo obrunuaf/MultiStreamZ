@@ -21,7 +21,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
       return `https://www.twitch.tv/popout/${stream.channelName}/chat?parent=${hostname}&darkpopout=true`;
     }
     if (stream.platform === 'kick') {
-      return `https://kick.com/popout/${stream.channelName}/chat`;
+      // Using the industry-standard Kick.CX chat client (as used by MultiKick.com)
+      // This client handles login, 7TV emotes, and is much more stable than official embed
+      return `https://chat.kick.cx/embed/${stream.channelName}`;
     }
     return '';
   };

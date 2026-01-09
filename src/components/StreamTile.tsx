@@ -159,16 +159,19 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
         isFeatured ? 'border-2 border-neutral-100 ring-4 ring-neutral-100/5' : 'border border-white/5'
       }`}
     >
-      {/* Real-Time Overlay (Market Standard) */}
-      <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-        {/* Top Bar: Controls Only */}
-        <div className="absolute top-0 right-0 p-2 pointer-events-auto">
+      {/* Premium Controls Overlay (Nevethon-Inspired Minimalism) */}
+      <div className="absolute inset-x-0 top-0 z-20 p-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none flex justify-between items-start">
+        {/* Left Side: Empty (Native Metadata here) */}
+        <div />
+
+        {/* Right Side: Essential Utility */}
+        <div className="pointer-events-auto">
             <button 
                 onClick={() => reloadStream(stream.id)}
-                className="p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-sm backdrop-blur-md transition-all border border-white/5 opacity-0 group-hover:opacity-100"
-                title="Recarregar Player"
+                className="p-2 bg-black/40 hover:bg-black/80 text-white rounded-lg backdrop-blur-xl transition-all duration-200 border border-white/5 hover:border-white/20 shadow-2xl active:scale-90"
+                title="Recarregar esta live"
             >
-                <RefreshCw size={12} />
+                <RefreshCw size={13} strokeWidth={2.5} />
             </button>
         </div>
       </div>

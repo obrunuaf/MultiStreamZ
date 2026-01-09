@@ -166,6 +166,9 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, [loginTwitch, loginKick, addStream, customClientId]);
 
+  const [authError, setAuthError] = useState<string|null>(null);
+  const [authStatus, setAuthStatus] = useState<string>('Validando autenticação...');
+
   // Handle Kick Callback (Inside Popup)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -174,17 +177,32 @@ export const Header: React.FC = () => {
 
     if (code && state === 'kick_auth' && window.opener) {
         setIsAuthCallback(true);
-        console.log('Kick Callback: Processing Handshake...', { code, redirect: getRedirectUri() });
+        setAuthStatus('Iniciando troca de chaves...');
         
-        const verifier = localStorage.getItem('kick_code_verifier');
+        // Timeout to prevent infinite hang
+        const authTimeout = setTimeout(() => {
+            if (!authError) setAuthError('O processo demorou muito (Timeout). Verifique se a Kick está instável.');
+        }, 15000);
+
+        let verifier = localStorage.getItem('kick_code_verifier');
+        try {
+            if (!verifier && window.opener && window.opener.localStorage) {
+                verifier = window.opener.localStorage.getItem('kick_code_verifier');
+            }
+        } catch (err) {
+            console.warn('StayAlive: Access to opener storage blocked.', err);
+        }
+
         if (!verifier) {
-          console.error('Kick Error: Code verifier missing in localStorage. Using fallback check...');
-          // Optional: Some browsers might block storage in popups
+            setAuthError('Chave de segurança não encontrada (PKCE Verifier Missing).');
+            clearTimeout(authTimeout);
+            return;
         }
 
         const OFFICIAL_KICK_ID = '01KEJ794H7E71R2YZKFYZCYDDV';
+        const redirectUri = getRedirectUri();
 
-        // Exchange code for token
+        setAuthStatus('Convertendo código em token...');
         fetch('https://id.kick.com/oauth/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -192,34 +210,42 @@ export const Header: React.FC = () => {
                 client_id: OFFICIAL_KICK_ID,
                 grant_type: 'authorization_code',
                 code,
-                redirect_uri: getRedirectUri(),
-                code_verifier: verifier || ''
+                redirect_uri: redirectUri,
+                code_verifier: verifier
             })
         })
         .then(async res => {
             const text = await res.text();
-            console.log('Kick Exchange Result:', res.status, text);
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
+            if (!res.ok) throw new Error(text || `Erro ${res.status}`);
             return JSON.parse(text);
         })
         .then(data => {
             if (data.access_token) {
+                setAuthStatus('Sincronizando perfil...');
                 localStorage.removeItem('kick_code_verifier');
-                // Notify parent immediately
+                try {
+                    if (window.opener && window.opener.localStorage) {
+                        window.opener.localStorage.removeItem('kick_code_verifier');
+                    }
+                } catch(err) {
+                    console.warn('StayAlive: Could not clear opener storage.', err);
+                }
+                
                 window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, '*');
-                console.log('Kick Auth Sent to Parent. Closing in 1s...');
+                setAuthStatus('Pronto! Fechando...');
+                clearTimeout(authTimeout);
                 setTimeout(() => window.close(), 1000);
             } else {
-                console.error('Kick Token Data error:', data);
-                alert('Erro na troca de código: ' + (data.error_description || data.error || 'Unknown Error'));
+                throw new Error(data.error_description || data.error || 'Token inválido');
             }
         })
         .catch(err => {
-            console.error('Kick Handshake Deep Error:', err);
-            // Don't close immediately so user can see it
+            console.error('Handshake Error:', err);
+            setAuthError(`Falha na Kick: ${err.message}`);
+            clearTimeout(authTimeout);
         });
     }
-  }, []);
+  }, [authError]);
 
   // Session Auto-Validation (Persistent Identity)
   useEffect(() => {
@@ -289,13 +315,22 @@ export const Header: React.FC = () => {
     window.open(authUrl, 'KickAuth', 'width=550,height=750,status=no,menubar=no,resizable=yes');
   };
 
-  // If this window is just a callback processor, render a clean loading state instead of the whole UI
   if (isAuthCallback) {
     return (
-        <div className="fixed inset-0 bg-neutral-950 flex flex-col items-center justify-center z-[9999]">
-            <div className="w-12 h-12 border-2 border-kick border-t-transparent rounded-full animate-spin mb-4" />
-            <h2 className="text-white font-black uppercase text-sm tracking-widest">Sincronizando Kick</h2>
-            <p className="text-neutral-500 text-[10px] uppercase mt-2 font-bold">Validando autenticação...</p>
+        <div className="fixed inset-0 bg-neutral-950 flex flex-col items-center justify-center z-9999">
+            {authError ? (
+                <div className="text-center p-6 bg-red-500/10 border border-red-500/20 rounded-lg max-w-[80%]">
+                    <div className="text-red-500 font-black uppercase text-xs mb-2 tracking-widest">Erro de Sincronização</div>
+                    <p className="text-neutral-400 text-[10px] leading-relaxed mb-4">{authError}</p>
+                    <button onClick={() => window.close()} className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-bold uppercase rounded transition-colors">Fechar Janela</button>
+                </div>
+            ) : (
+                <>
+                    <div className="w-12 h-12 border-2 border-kick border-t-transparent rounded-full animate-spin mb-4" />
+                    <h2 className="text-white font-black uppercase text-sm tracking-widest">Sincronizando Kick</h2>
+                    <p className="text-neutral-500 text-[10px] uppercase mt-2 font-bold">{authStatus}</p>
+                </>
+            )}
         </div>
     );
   }
