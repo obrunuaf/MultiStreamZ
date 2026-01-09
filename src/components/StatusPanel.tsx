@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Clock, ShieldAlert, Twitch, Globe, Cpu } from 'lucide-react';
+import { Activity, Clock, ShieldAlert, Twitch, Cpu } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 
 export const StatusPanel: React.FC = () => {
@@ -65,25 +65,6 @@ export const StatusPanel: React.FC = () => {
                     {auth.twitch && <div className="w-1.5 h-1.5 rounded-full bg-twitch" />}
                 </div>
                 
-                {/* Kick Card */}
-                <div className={`rounded-sm border p-3 flex items-center justify-between transition-all ${
-                    auth.kick 
-                    ? 'bg-[#00e701]/5 border-[#00e701]/20' 
-                    : 'bg-black/40 border-white/5 grayscale opacity-50'
-                }`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-xs ${auth.kick ? 'bg-[#00e701] text-black' : 'bg-neutral-800'}`}>
-                            <Globe size={14} strokeWidth={3} />
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-black text-white uppercase tracking-tight">Kick.com</div>
-                            <div className="text-[9px] font-bold text-neutral-500">
-                                {auth.kick ? `@${auth.kick.username}` : 'Nenhuma conta'}
-                            </div>
-                        </div>
-                    </div>
-                    {auth.kick && <div className="w-1.5 h-1.5 rounded-full bg-[#00e701]" />}
-                </div>
             </div>
 
             <div className="flex-1 bg-black/20 rounded-md border border-dashed border-white/5 flex items-center justify-center p-6 text-center">

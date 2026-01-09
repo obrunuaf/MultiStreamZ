@@ -31,7 +31,6 @@ interface StreamState {
   streams: Stream[];
   sidebarVisible: boolean;
   chatVisible: boolean;
-  mapVisible: boolean;
   sidebarWidth: number;
   mapHeight: number;
   featuredStreamId: string | null;
@@ -59,7 +58,6 @@ interface StreamState {
   setLayoutType: (layout: 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive') => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
-  toggleMap: () => void;
   setStreamVolume: (id: string, volume: number) => void;
   toggleStreamMute: (id: string) => void;
   reloadStream: (id: string) => void;
@@ -113,7 +111,6 @@ export const useStreamStore = create<StreamState>()(
       streams: [],
       sidebarVisible: true,
       chatVisible: true,
-      mapVisible: true,
       sidebarWidth: 360,
       mapHeight: 300,
       featuredStreamId: null,
@@ -209,11 +206,8 @@ export const useStreamStore = create<StreamState>()(
       setFeaturedStream: (id) => set((state) => {
         if (!id) return { featuredStreamId: null };
         
-        // Auto-mute others, unmute featured
-        const updatedStreams = state.streams.map(s => ({
-          ...s,
-          isMuted: s.id !== id
-        }));
+        // Preserve user mute settings (Don't auto-mute others)
+        const updatedStreams = [...state.streams];
         
         const index = updatedStreams.findIndex(s => s.id === id);
         if (index > -1) {
@@ -237,7 +231,6 @@ export const useStreamStore = create<StreamState>()(
 
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
       toggleChat: () => set((state) => ({ chatVisible: !state.chatVisible })),
-      toggleMap: () => set((state) => ({ mapVisible: !state.mapVisible })),
       
       setStreamVolume: (id, volume) => set((state) => ({
         streams: state.streams.map((s) => s.id === id ? { ...s, volume } : s),
@@ -328,7 +321,6 @@ export const useStreamStore = create<StreamState>()(
         streams: state.streams,
         sidebarVisible: state.sidebarVisible,
         chatVisible: state.chatVisible,
-        mapVisible: state.mapVisible,
         sidebarWidth: state.sidebarWidth,
         mapHeight: state.mapHeight,
         featuredStreamId: state.featuredStreamId,
