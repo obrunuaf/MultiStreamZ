@@ -188,13 +188,21 @@ export const Header: React.FC = () => {
                 code_verifier: verifier
             })
         })
-        .then(res => res.json())
+        .then(async res => {
+            const text = await res.text();
+            console.log('Kick Handshake raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch {
+                return { error: 'invalid_json', raw: text };
+            }
+        })
         .then(data => {
             console.log('Kick Token Data:', data);
             if (data.access_token) {
                 localStorage.removeItem('kick_code_verifier');
                 window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, window.location.origin);
-                setTimeout(() => window.close(), 500); // Small delay to ensure message sent
+                setTimeout(() => window.close(), 500);
             } else {
                 console.error('Kick Token Exchange Failed:', data);
             }

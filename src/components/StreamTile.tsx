@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { type Stream, useStreamStore } from '../store/useStreamStore';
-import { AlertTriangle, RefreshCw, Volume2, VolumeX, Maximize2, Users } from 'lucide-react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface StreamTileProps {
   stream: Stream;
@@ -11,7 +11,7 @@ const MAX_RETRIES = 3;
 const LOADING_TIMEOUT_MS = 15000;
 
 export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) => {
-  const { setStreamVolume, toggleStreamMute, reloadStream } = useStreamStore();
+  const { reloadStream } = useStreamStore();
   const [status, setStatus] = useState<'loading' | 'active' | 'error'>('loading');
   const [retryCount, setRetryCount] = useState(0);
   const [errorReason, setErrorReason] = useState<string | null>(null);
@@ -161,86 +161,15 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
     >
       {/* Real-Time Overlay (Market Standard) */}
       <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-        {/* Top Bar: Info */}
-        <div className="absolute top-0 left-0 w-full p-3 bg-linear-to-b from-black/80 to-transparent flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                    {stream.metadata?.isLive ? (
-                        <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-red-500 rounded-xs">
-                            <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                            <span className="text-[7px] font-black text-white uppercase tracking-wider">Live</span>
-                        </div>
-                    ) : (
-                        <div className="px-1.5 py-0.5 bg-neutral-800 rounded-xs">
-                            <span className="text-[7px] font-black text-neutral-400 uppercase tracking-wider">Offline</span>
-                        </div>
-                    )}
-                    <span className="text-[10px] font-black text-white uppercase tracking-tight drop-shadow-md">
-                        {stream.channelName}
-                    </span>
-                </div>
-                {stream.metadata?.isLive && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-[8px] font-bold text-neutral-300 opacity-80 backdrop-blur-sm bg-black/20 px-1 rounded-xs truncate max-w-40">
-                            {stream.metadata.gameName}
-                        </span>
-                        <div className="flex items-center gap-1 text-neutral-400 text-[8px] font-black">
-                            <Users size={8} />
-                            {stream.metadata.viewerCount.toLocaleString()}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex items-center gap-1 pointer-events-auto">
-                <button 
-                    onClick={() => reloadStream(stream.id)}
-                    className="p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-sm backdrop-blur-md transition-all border border-white/5"
-                    title="Recarregar Player"
-                >
-                    <RefreshCw size={12} />
-                </button>
-            </div>
-        </div>
-
-        {/* Bottom Bar: Audio Mixer & Controls */}
-        <div className="absolute bottom-0 left-0 w-full p-4 bg-linear-to-t from-black/80 to-transparent pointer-events-auto">
-            <div className="flex items-center gap-4">
-                <button 
-                    onClick={() => toggleStreamMute(stream.id)}
-                    className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-sm backdrop-blur-md transition-all border border-white/10"
-                >
-                    {stream.isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                </button>
-
-                <div className="flex-1 group/mixer relative h-8 flex items-center">
-                    <div className="w-full h-1 bg-white/10 rounded-full relative overflow-hidden">
-                        <div 
-                            className="absolute top-0 left-0 h-full bg-white transition-all shadow-[0_0_10px_rgba(255,255,255,0.3)]" 
-                            style={{ width: `${stream.volume * 100}%` }}
-                        />
-                    </div>
-                    <input 
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={stream.volume}
-                        onChange={(e) => setStreamVolume(stream.id, parseFloat(e.target.value))}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black text-white/50">{Math.round(stream.volume * 100)}%</span>
-                    <button 
-                        onClick={() => {/* Fullscreen placeholder */}}
-                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-sm backdrop-blur-md transition-all border border-white/10"
-                    >
-                        <Maximize2 size={14} />
-                    </button>
-                </div>
-            </div>
+        {/* Top Bar: Controls Only */}
+        <div className="absolute top-0 right-0 p-2 pointer-events-auto">
+            <button 
+                onClick={() => reloadStream(stream.id)}
+                className="p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-sm backdrop-blur-md transition-all border border-white/5 opacity-0 group-hover:opacity-100"
+                title="Recarregar Player"
+            >
+                <RefreshCw size={12} />
+            </button>
         </div>
       </div>
 

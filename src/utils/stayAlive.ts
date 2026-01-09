@@ -33,10 +33,23 @@ export class StayAliveManager {
             silentSource.loop = true;
             silentSource.connect(this.audioContext.destination);
             silentSource.start();
-            console.log('StayAlive: Silent Audio Loop active');
+            
+            // Critical: Resume context on first user gesture
+            const resume = async () => {
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                    console.log('StayAlive: Audio heartbeat resumed via gesture');
+                    document.removeEventListener('click', resume);
+                    document.removeEventListener('keydown', resume);
+                }
+            };
+            document.addEventListener('click', resume);
+            document.addEventListener('keydown', resume);
+
+            console.log('StayAlive: Background protection standby (waiting for gesture)');
 
         } catch (err) {
-            console.warn('StayAlive: Failed to enable some features:', err);
+            console.warn('StayAlive: Failed to enable background features:', err);
         }
     }
 

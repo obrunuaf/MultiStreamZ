@@ -4,19 +4,19 @@ import { useStreamStore } from '../store/useStreamStore';
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export const useMetadataSync = () => {
-    const { streams, updateStreamMetadata, auth, customClientId } = useStreamStore();
+    const { updateStreamMetadata, auth, customClientId } = useStreamStore();
 
     useEffect(() => {
         const syncMetadata = async () => {
-            if (streams.length === 0) return;
+            const currentStreams = useStreamStore.getState().streams;
+            if (currentStreams.length === 0) return;
 
             // 1. Twitch Sync (Batch)
-            const twitchStreams = streams.filter(s => s.platform === 'twitch');
+            const twitchStreams = currentStreams.filter(s => s.platform === 'twitch');
             if (twitchStreams.length > 0) {
                 const query = twitchStreams.map(s => `user_login=${s.channelName}`).join('&');
                 const token = auth.twitch?.token;
                 
-                // Helix endpoint for live status and viewers
                 fetch(`https://api.twitch.tv/helix/streams?${query}`, {
                     headers: {
                         'Authorization': `Bearer ${token || ''}`,
@@ -45,8 +45,8 @@ export const useMetadataSync = () => {
                 .catch(err => console.error('Twitch Sync Error:', err));
             }
 
-            // 2. Kick Sync (Individual for now, as no batch API is easily available)
-            const kickStreams = streams.filter(s => s.platform === 'kick');
+            // 2. Kick Sync
+            const kickStreams = currentStreams.filter(s => s.platform === 'kick');
             kickStreams.forEach(s => {
                 fetch(`https://kick.com/api/v1/channels/${s.channelName}`)
                 .then(res => res.json())
@@ -74,5 +74,5 @@ export const useMetadataSync = () => {
         syncMetadata();
         const interval = setInterval(syncMetadata, REFRESH_INTERVAL);
         return () => clearInterval(interval);
-    }, [streams, auth.twitch?.token, customClientId, updateStreamMetadata]);
+    }, [auth.twitch?.token, customClientId, updateStreamMetadata]);
 };
