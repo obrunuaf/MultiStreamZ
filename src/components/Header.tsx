@@ -10,8 +10,14 @@ export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [isAuthCallback, setIsAuthCallback] = useState(false); // To detect if this window is just a callback processing
   const { validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, loginKick, logoutKick, customClientId, addStream } = useStreamStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Helper to standardize Redirect URI (Strict Match is required by OAuth 2.1)
+  const getRedirectUri = () => {
+    return window.location.origin.replace(/\/$/, "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,11 +173,13 @@ export const Header: React.FC = () => {
     const state = params.get('state');
 
     if (code && state === 'kick_auth' && window.opener) {
-        console.log('Kick Callback: Code detected, initiating exchange...');
+        setIsAuthCallback(true);
+        console.log('Kick Callback: Processing Handshake...', { code, redirect: getRedirectUri() });
+        
         const verifier = localStorage.getItem('kick_code_verifier');
         if (!verifier) {
-          console.error('Kick Error: Code verifier missing in localStorage');
-          return;
+          console.error('Kick Error: Code verifier missing in localStorage. Using fallback check...');
+          // Optional: Some browsers might block storage in popups
         }
 
         const OFFICIAL_KICK_ID = '01KEJ794H7E71R2YZKFYZCYDDV';
@@ -184,30 +192,32 @@ export const Header: React.FC = () => {
                 client_id: OFFICIAL_KICK_ID,
                 grant_type: 'authorization_code',
                 code,
-                redirect_uri: window.location.origin,
-                code_verifier: verifier
+                redirect_uri: getRedirectUri(),
+                code_verifier: verifier || ''
             })
         })
         .then(async res => {
             const text = await res.text();
-            console.log('Kick Handshake raw response:', text);
-            try {
-                return JSON.parse(text);
-            } catch {
-                return { error: 'invalid_json', raw: text };
-            }
+            console.log('Kick Exchange Result:', res.status, text);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
+            return JSON.parse(text);
         })
         .then(data => {
-            console.log('Kick Token Data:', data);
             if (data.access_token) {
                 localStorage.removeItem('kick_code_verifier');
-                window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, window.location.origin);
-                setTimeout(() => window.close(), 500);
+                // Notify parent immediately
+                window.opener.postMessage({ type: 'KICK_AUTH_SUCCESS', token: data.access_token }, '*');
+                console.log('Kick Auth Sent to Parent. Closing in 1s...');
+                setTimeout(() => window.close(), 1000);
             } else {
-                console.error('Kick Token Exchange Failed:', data);
+                console.error('Kick Token Data error:', data);
+                alert('Erro na troca de código: ' + (data.error_description || data.error || 'Unknown Error'));
             }
         })
-        .catch(err => console.error('Kick Token Exchange Error:', err));
+        .catch(err => {
+            console.error('Kick Handshake Deep Error:', err);
+            // Don't close immediately so user can see it
+        });
     }
   }, []);
 
@@ -271,12 +281,24 @@ export const Header: React.FC = () => {
     const challenge = await generateCodeChallenge(verifier);
     localStorage.setItem('kick_code_verifier', verifier);
 
-    const REDIRECT_URI = window.location.origin;
+    const REDIRECT_URI = getRedirectUri();
     const scope = encodeURIComponent('user:read chat:write');
     const authUrl = `https://id.kick.com/oauth/authorize?client_id=${OFFICIAL_KICK_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=kick_auth&code_challenge=${challenge}&code_challenge_method=S256`;
     
+    console.log('Kick Login Start:', { redirect: REDIRECT_URI });
     window.open(authUrl, 'KickAuth', 'width=550,height=750,status=no,menubar=no,resizable=yes');
   };
+
+  // If this window is just a callback processor, render a clean loading state instead of the whole UI
+  if (isAuthCallback) {
+    return (
+        <div className="fixed inset-0 bg-neutral-950 flex flex-col items-center justify-center z-[9999]">
+            <div className="w-12 h-12 border-2 border-kick border-t-transparent rounded-full animate-spin mb-4" />
+            <h2 className="text-white font-black uppercase text-sm tracking-widest">Sincronizando Kick</h2>
+            <p className="text-neutral-500 text-[10px] uppercase mt-2 font-bold">Validando autenticação...</p>
+        </div>
+    );
+  }
 
   return (
     <header className="h-13 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-50">

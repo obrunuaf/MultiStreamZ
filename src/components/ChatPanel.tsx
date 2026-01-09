@@ -14,8 +14,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
 
   const getChatUrl = (stream: typeof activeStream) => {
     if (!stream) return '';
+    const hostname = window.location.hostname;
     if (stream.platform === 'twitch') {
-      return `https://www.twitch.tv/embed/${stream.channelName}/chat?parent=${window.location.hostname}&darkpopout`;
+      // Use popout URL as it often handles sessions better than the standard embed
+      // We also include both window.location.hostname for the parent requirement
+      return `https://www.twitch.tv/popout/${stream.channelName}/chat?parent=${hostname}&darkpopout=true`;
     }
     if (stream.platform === 'kick') {
       return `https://kick.com/popout/${stream.channelName}/chat`;
