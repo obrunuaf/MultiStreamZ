@@ -2,15 +2,18 @@ import React, { useRef, useEffect } from 'react';
 import { useStreamStore } from '../store/useStreamStore';
 import { ChevronLeft } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
+import { MapPanel } from './MapPanel';
 
 export const Sidebar: React.FC = () => {
   const { 
     sidebarVisible, toggleSidebar, chatVisible, toggleChat, 
-    sidebarWidth, setSidebarWidth
+    mapVisible, toggleMap, sidebarWidth, setSidebarWidth,
+    mapHeight, setMapHeight
   } = useStreamStore();
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizingSidebar = useRef(false);
+  const isResizingMap = useRef(false);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -20,10 +23,20 @@ export const Sidebar: React.FC = () => {
           setSidebarWidth(newWidth);
         }
       }
+      if (isResizingMap.current) {
+        const rect = sidebarRef.current?.getBoundingClientRect();
+        if (rect) {
+          const newHeight = e.clientY - rect.top;
+          if (newHeight > 100 && newHeight < rect.height - 100) {
+            setMapHeight(newHeight);
+          }
+        }
+      }
     };
 
     const handleMouseUp = () => {
       isResizingSidebar.current = false;
+      isResizingMap.current = false;
       document.body.style.cursor = 'default';
     };
 
@@ -33,7 +46,7 @@ export const Sidebar: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [setSidebarWidth]);
+  }, [setSidebarWidth, setMapHeight]);
 
   const toggleButton = (
     <button 
@@ -65,6 +78,24 @@ export const Sidebar: React.FC = () => {
           document.body.style.cursor = 'col-resize';
         }}
       />
+
+      {/* Map Panel (Restored at the top) */}
+      {mapVisible && (
+        <div 
+          className="relative flex flex-col bg-background overflow-hidden border-b border-border"
+          style={{ height: `${mapHeight}px` }}
+        >
+          <MapPanel showCloseButton onClose={toggleMap} />
+          
+          <div 
+            className="absolute bottom-0 left-0 w-full h-1.5 cursor-row-resize hover:bg-neutral-600 transition-colors z-50"
+            onMouseDown={() => {
+              isResizingMap.current = true;
+              document.body.style.cursor = 'row-resize';
+            }}
+          />
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {chatVisible && <ChatPanel showCloseButton onClose={toggleChat} />}

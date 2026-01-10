@@ -4,6 +4,7 @@ import 'flexlayout-react/style/dark.css';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSlot } from './StreamSlot';
 import { ChatPanel } from './ChatPanel';
+import { MapPanel } from './MapPanel';
 import { StatusPanel } from './StatusPanel';
 
 // Custom CSS for FlexLayout to match MultiStreamZ aesthetic
@@ -48,6 +49,7 @@ export const FlexGrid: React.FC = () => {
             type: 'tabset',
             weight: 25,
             children: [
+              { type: 'tab', name: 'MAPA', component: 'map', id: 'map-tab' },
               { type: 'tab', name: 'CHAT', component: 'chat', id: 'chat-tab' },
               { type: 'tab', name: 'STATUS', component: 'status', id: 'status-tab' },
             ]
@@ -103,7 +105,11 @@ export const FlexGrid: React.FC = () => {
         return <StreamSlot stream={stream} />;
       }
     }
-
+ 
+    if (component === 'map') {
+        return <MapPanel />;
+    }
+ 
     if (component === 'chat') {
         return <ChatPanel />;
     }

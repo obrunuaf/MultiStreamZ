@@ -1,4 +1,4 @@
-import { MessageSquare, Settings, LayoutGrid, LogOut, Twitch } from 'lucide-react';
+import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
@@ -9,7 +9,7 @@ export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const { validateAndAddStream, toggleChat, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, customClientId, addStream } = useStreamStore();
+  const { validateAndAddStream, toggleChat, toggleMap, sidebarVisible, toggleSidebar, auth, loginTwitch, logoutTwitch, customClientId, addStream } = useStreamStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,6 +175,13 @@ export const Header: React.FC = () => {
           title="Alternar Chat"
         >
           <MessageSquare size={20} />
+        </button>
+        <button
+          onClick={toggleMap}
+          className="p-2 hover:bg-surface rounded-md transition-colors text-neutral-400 hover:text-neutral-100"
+          title="Alternar Mapa"
+        >
+          <MapIcon size={20} />
         </button>
         <button
           onClick={toggleSidebar}
