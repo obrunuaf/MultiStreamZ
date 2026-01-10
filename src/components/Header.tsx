@@ -150,19 +150,19 @@ export const Header: React.FC = () => {
   }, [auth.twitch, customClientId, loginTwitch, logoutTwitch]);
 
   return (
-    <header className="h-[header-height] glass-panel flex items-center justify-between px-6 z-9999 border-b border-white/5 shadow-2xl transition-premium backdrop-blur-xl">
+    <header className="h-[header-height] glass-panel flex items-center justify-between px-4 md:px-6 z-50 border-b border-white/5 shadow-2xl transition-premium backdrop-blur-xl">
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       
       {/* Brand Section - Always Left */}
-      <div className="flex items-center gap-3 shrink-0 group cursor-pointer relative">
+      <div className="flex items-center gap-3 shrink-0 group cursor-pointer relative ">
         <div className="relative">
-          <div className="w-7 h-7 bg-neutral-100 rounded flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-lg shadow-white/5">
-            <div className="w-3.5 h-3.5 bg-background rounded-xs" />
+          <div className="w-6 h-6 md:w-7 md:h-7 bg-neutral-100 rounded flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-lg shadow-white/5">
+            <div className="w-3 h-3 md:w-3.5 md:h-3.5 bg-background rounded-xs" />
           </div>
-          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#18181b] animate-live-pulse" />
+          <div className="absolute -top-1 -right-1 w-2 md:w-2.5 h-2 md:h-2.5 bg-red-500 rounded-full border-2 border-[#18181b] animate-live-pulse" />
         </div>
         <div className="flex flex-col">
-          <span className="font-black text-xs tracking-[0.2em] text-neutral-100 uppercase group-hover:text-white transition-colors leading-none">MultiStreamZ</span>
+          <span className="font-black text-[10px] md:text-xs tracking-[0.2em] text-neutral-100 uppercase group-hover:text-white transition-colors leading-none">MultiStreamZ</span>
         </div>
       </div>
 

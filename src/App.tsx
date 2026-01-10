@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Minimize2 } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
+import { BottomNav } from './components/BottomNav';
 import { StreamGrid } from './components/StreamGrid';
 import { IframePortalLayer } from './components/IframePortalLayer';
 import { useStreamStore } from './store/useStreamStore';
@@ -9,7 +10,7 @@ import { useMetadataSync } from './hooks/useMetadataSync';
 import { stayAlive } from './utils/stayAlive';
 
 function App() {
-  const { streams, addStream, layoutType, headerVisible, toggleHeader } = useStreamStore();
+  const { streams, addStream, layoutType, headerVisible, toggleHeader, mobileCinemaMode, toggleMobileCinema } = useStreamStore();
   useMetadataSync(); // Global metadata background sync
 
   // Load initial streams if empty (just for demo purposes)
@@ -48,7 +49,7 @@ function App() {
       </div>
 
       {/* Show Header Trigger (Visible when header is hidden) */}
-      {!headerVisible && (
+      {!headerVisible && !mobileCinemaMode && (
         <button 
           onClick={toggleHeader}
           className="fixed top-0 left-1/2 -translate-x-1/2 z-50 group/trigger flex flex-col items-center px-6 py-1.5 rounded-b-2xl bg-twitch/20 hover:bg-twitch/80 border border-t-0 border-white/10 backdrop-blur-md opacity-40 hover:opacity-100 transition-all duration-500 hover:py-2.5 animate-in slide-in-from-top-8 group"
@@ -62,9 +63,21 @@ function App() {
           <div className="absolute inset-0 bg-twitch/10 blur-xl -z-10 group-hover:bg-twitch/40 transition-colors" />
         </button>
       )}
+
+      {/* Return from Cinema Mode Button (Bottom Center for Mobile) */}
+      {mobileCinemaMode && (
+        <button
+          onClick={toggleMobileCinema}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-6 py-3 bg-green-500 text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-full shadow-[0_10px_30px_rgba(34,197,94,0.4)] z-110 animate-in slide-in-from-bottom-8 fade-in duration-500 md:hidden active:scale-95 transition-transform active:bg-green-400 group"
+        >
+          <div className="w-2 h-2 rounded-full bg-black animate-pulse" />
+          Sair do Modo Cinema
+          <Minimize2 size={14} />
+        </button>
+      )}
      
       <main 
-        className="flex-1 flex overflow-hidden flex-row transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
+        className={`flex-1 flex overflow-hidden flex-row transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${mobileCinemaMode ? 'pb-0' : 'pb-16 md:pb-0'}`}
         style={{ 
           marginTop: headerVisible ? 'var(--header-height)' : '0px'
         }}
@@ -73,10 +86,12 @@ function App() {
         {layoutType !== 'interactive' && <Sidebar />}
       </main>
 
+      <BottomNav />
+
       <IframePortalLayer />
 
-      {/* Footer / Status Bar */}
-      <footer className="h-6 border-t border-border bg-panel px-3 flex items-center justify-between text-[10px] text-neutral-500 font-medium z-50">
+      {/* Footer / Status Bar - Hidden on mobile */}
+      <footer className="hidden md:flex h-6 border-t border-border bg-panel px-3 items-center justify-between text-[10px] text-neutral-500 font-medium z-50">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />

@@ -110,6 +110,40 @@
   overflow: hidden;
 }
 
+/* Mobile Stacking Rule */
+@media (max-width: 768px) {
+  main.flex-row {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+
+  .stream-grid-container {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: visible !important;
+    padding-bottom: 20px;
+    height: auto !important;
+    min-height: 50vh;
+  }
+
+  /* Force 50/50 split for dual streams on mobile */
+  .stream-grid-container > div:nth-child(1):nth-last-child(2),
+  .stream-grid-container > div:nth-child(2):nth-last-child(1) {
+    flex: 1 1 50% !important;
+    height: 300px !important; /* Fixed height to avoid collapse */
+    min-height: 300px !important;
+  }
+
+  aside {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 400px;
+    border-left: none !important;
+    border-top: 1px solid var(--glass-border);
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
 /* Default GRID layout logic via inline style/classes, but stable container */
 
 /* FEATURED Layout */

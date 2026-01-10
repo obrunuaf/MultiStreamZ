@@ -8,7 +8,7 @@ export const Sidebar: React.FC = () => {
   const { 
     sidebarVisible, toggleSidebar, chatVisible, toggleChat, 
     mapVisible, toggleMap, sidebarWidth, setSidebarWidth,
-    mapHeight, setMapHeight
+    mapHeight, setMapHeight, mobileCinemaMode
   } = useStreamStore();
 
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -48,10 +48,11 @@ export const Sidebar: React.FC = () => {
     };
   }, [setSidebarWidth, setMapHeight]);
 
+  // Hide the sidebar trigger button on mobile to avoid UI clutter
   const toggleButton = (
     <button 
       onClick={toggleSidebar}
-      className={`fixed right-0 top-1/2 -translate-y-1/2 bg-panel border-l border-y border-border p-1.5 rounded-l-md hover:bg-surface text-neutral-400 z-50 transition-all duration-300 ${
+      className={`fixed right-0 top-1/2 -translate-y-1/2 bg-panel border-l border-y border-border p-1.5 rounded-l-md hover:bg-surface text-neutral-400 z-50 transition-all duration-300 hidden md:flex ${
         sidebarVisible ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100 shadow-[-5px_0_15px_rgba(0,0,0,0.3)]'
       }`}
     >
@@ -63,9 +64,10 @@ export const Sidebar: React.FC = () => {
     <>
       <aside 
       ref={sidebarRef}
-      className="h-full glass-panel flex flex-col relative z-40 transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
+      className={`glass-panel flex flex-col relative z-40 transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${mobileCinemaMode ? 'hidden' : 'flex'}`}
       style={{ 
         width: sidebarVisible ? `${sidebarWidth}px` : '0px',
+        height: '100%',
         opacity: sidebarVisible ? 1 : 0,
         transform: sidebarVisible ? 'translateX(0)' : 'translateX(40px)',
         pointerEvents: sidebarVisible ? 'auto' : 'none',
@@ -73,23 +75,23 @@ export const Sidebar: React.FC = () => {
       }}
     >
       <div 
-        className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-neutral-600 transition-colors z-50 -ml-0.75"
+        className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-neutral-600 transition-colors z-50 -ml-0.75 hidden md:block"
         onMouseDown={() => {
           isResizingSidebar.current = true;
           document.body.style.cursor = 'col-resize';
         }}
       />
 
-      {/* Map Panel (Restored at the top) */}
+      {/* Map Panel */}
       {mapVisible && (
         <div 
-          className="relative flex flex-col bg-background overflow-hidden border-b border-border"
+          className="relative flex flex-col bg-background overflow-hidden border-b border-border shrirnk-0"
           style={{ height: `${mapHeight}px` }}
         >
           <MapPanel showCloseButton onClose={toggleMap} />
           
           <div 
-            className="absolute bottom-0 left-0 w-full h-1.5 cursor-row-resize hover:bg-neutral-600 transition-colors z-50"
+            className="absolute bottom-0 left-0 w-full h-1.5 cursor-row-resize hover:bg-neutral-600 transition-colors z-50 hidden md:block"
             onMouseDown={() => {
               isResizingMap.current = true;
               document.body.style.cursor = 'row-resize';
@@ -98,7 +100,8 @@ export const Sidebar: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Chat Panel */}
+      <div className={`flex flex-col overflow-hidden transition-all duration-500 ${chatVisible ? 'h-full' : 'h-0'}`}>
         {chatVisible && <ChatPanel showCloseButton onClose={toggleChat} />}
       </div>
 

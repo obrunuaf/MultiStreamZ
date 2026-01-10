@@ -33,6 +33,7 @@ interface StreamState {
   chatVisible: boolean;
   mapVisible: boolean;
   headerVisible: boolean;
+  mobileCinemaMode: boolean;
   amoledMode: boolean;
   sidebarWidth: number;
   mapHeight: number;
@@ -63,6 +64,7 @@ interface StreamState {
   toggleChat: () => void;
   toggleMap: () => void;
   toggleHeader: () => void;
+  toggleMobileCinema: () => void;
   setAmoledMode: (enabled: boolean) => void;
   setStreamVolume: (id: string, volume: number) => void;
   toggleStreamMute: (id: string) => void;
@@ -119,6 +121,7 @@ export const useStreamStore = create<StreamState>()(
       chatVisible: true,
       mapVisible: true,
       headerVisible: true,
+      mobileCinemaMode: false,
       amoledMode: false,
       sidebarWidth: 360,
       mapHeight: 300,
@@ -238,10 +241,39 @@ export const useStreamStore = create<StreamState>()(
 
       setLayoutType: (layoutType) => set({ layoutType }),
 
-      toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
-      toggleChat: () => set((state) => ({ chatVisible: !state.chatVisible })),
-      toggleMap: () => set((state) => ({ mapVisible: !state.mapVisible })),
+      toggleSidebar: () => set((state) => ({ 
+        sidebarVisible: !state.sidebarVisible,
+        // If we open sidebar, make sure at least chat is on
+        chatVisible: !state.sidebarVisible ? true : state.chatVisible
+      })),
+      toggleChat: () => set((state) => {
+        const nextChat = !state.chatVisible;
+        const nextSidebar = nextChat || state.mapVisible;
+        return { 
+          chatVisible: nextChat,
+          sidebarVisible: nextSidebar
+        };
+      }),
+      toggleMap: () => set((state) => {
+        const nextMap = !state.mapVisible;
+        const nextSidebar = nextMap || state.chatVisible;
+        return { 
+          mapVisible: nextMap,
+          sidebarVisible: nextSidebar
+        };
+      }),
       toggleHeader: () => set((state) => ({ headerVisible: !state.headerVisible })),
+      toggleMobileCinema: () => set((state) => ({ 
+        mobileCinemaMode: !state.mobileCinemaMode,
+        ...( !state.mobileCinemaMode ? {
+          sidebarVisible: false,
+          chatVisible: false,
+          mapVisible: false,
+          headerVisible: false
+        } : {
+          headerVisible: true 
+        })
+      })),
       setAmoledMode: (enabled) => {
         set({ amoledMode: enabled });
         if (enabled) {
@@ -304,13 +336,11 @@ export const useStreamStore = create<StreamState>()(
 
         const { channelName, platform } = parsed;
         
-        // Basic check: avoid duplicates
         const currentStreams = useStreamStore.getState().streams;
         if (currentStreams.some(s => s.channelName.toLowerCase() === channelName.toLowerCase() && s.platform === platform)) {
             return false;
         }
 
-        // Real-time Validation (Market Standard)
         try {
             if (platform === 'twitch') {
                 const clientId = useStreamStore.getState().customClientId;
@@ -329,7 +359,7 @@ export const useStreamStore = create<StreamState>()(
             return true;
         } catch (e) {
             console.error('Validation failed', e);
-            useStreamStore.getState().addStream(input); // Fallback to add anyway if API fails
+            useStreamStore.getState().addStream(input); 
             return true;
         }
       }
@@ -342,6 +372,7 @@ export const useStreamStore = create<StreamState>()(
         chatVisible: state.chatVisible,
         mapVisible: state.mapVisible,
         headerVisible: state.headerVisible,
+        mobileCinemaMode: state.mobileCinemaMode,
         amoledMode: state.amoledMode,
         sidebarWidth: state.sidebarWidth,
         mapHeight: state.mapHeight,
