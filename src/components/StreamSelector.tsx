@@ -27,15 +27,14 @@ export const StreamSelector: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-3 px-3 py-1.5 bg-panel border border-border/50 rounded-full hover:border-neutral-600 transition-all group"
       >
-        {/* Live Badge */}
-        <div className="flex items-center gap-2 px-2 py-0.5 bg-red-500/15 border border-red-500/10 rounded-full shrink-0">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-[8px] font-black text-red-500 uppercase tracking-tighter">AO VIVO</span>
-        </div>
 
         <div className="flex items-center gap-2 max-w-30">
-          <div className="w-5 h-5 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 shrink-0 overflow-hidden">
-             <span className="text-[9px] font-black">{featuredStream?.channelName[0].toUpperCase()}</span>
+          <div className="w-5 h-5 rounded-full bg-neutral-800 flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">
+             {featuredStream?.metadata?.profileImage ? (
+               <img src={featuredStream.metadata.profileImage} className="w-full h-full object-cover" alt="" />
+             ) : (
+               <span className="text-[9px] font-black">{featuredStream?.channelName[0].toUpperCase()}</span>
+             )}
           </div>
           <span className="text-[11px] font-bold text-neutral-300 truncate lowercase">
             {featuredStream?.channelName}
@@ -68,10 +67,14 @@ export const StreamSelector: React.FC = () => {
                   featuredStreamId === stream.id ? 'bg-neutral-100 text-background' : 'hover:bg-neutral-800'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 transition-colors ${
-                  featuredStreamId === stream.id ? 'border-background/20 bg-background/10' : 'border-neutral-800 bg-neutral-900 group-hover:bg-neutral-800'
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 transition-colors overflow-hidden ${
+                  featuredStreamId === stream.id ? 'border-background/20 bg-background/10' : 'border-white/5 bg-neutral-900 group-hover:bg-neutral-800'
                 }`}>
-                   <span className="text-xs font-black">{stream.channelName[0].toUpperCase()}</span>
+                   {stream.metadata?.profileImage ? (
+                     <img src={stream.metadata.profileImage} className="w-full h-full object-cover" alt="" />
+                   ) : (
+                     <span className="text-xs font-black">{stream.channelName[0].toUpperCase()}</span>
+                   )}
                 </div>
                 
                 <div className="flex-1 text-left overflow-hidden">

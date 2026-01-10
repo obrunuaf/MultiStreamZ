@@ -43,7 +43,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">
             <MessageSquare size={14} className="text-purple-400/50" />
-            <span>CHAT AO VIVO</span>
+            <span>CHAT</span>
           </div>
           <div className="flex items-center gap-1">
             {activeStream && (

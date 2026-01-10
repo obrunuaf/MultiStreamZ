@@ -14,32 +14,38 @@ export const useMetadataSync = () => {
             // 1. Twitch Sync (Batch)
             const twitchStreams = currentStreams.filter(s => s.platform === 'twitch');
             if (twitchStreams.length > 0) {
-                const query = twitchStreams.map(s => `user_login=${s.channelName}`).join('&');
+                const streamQuery = twitchStreams.map(s => `user_login=${s.channelName}`).join('&');
+                const userQuery = twitchStreams.map(s => `login=${s.channelName}`).join('&');
                 const token = auth.twitch?.token;
+                const headers = {
+                    'Authorization': `Bearer ${token || ''}`,
+                    'Client-Id': customClientId
+                };
                 
-                fetch(`https://api.twitch.tv/helix/streams?${query}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token || ''}`,
-                        'Client-Id': customClientId
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    const liveData = data.data || [];
+                // Fetch both stream status and user info (for profile images)
+                Promise.all([
+                    fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, { headers }).then(r => r.json()),
+                    fetch(`https://api.twitch.tv/helix/users?${userQuery}`, { headers }).then(r => r.json())
+                ])
+                .then(([streamsData, usersData]) => {
+                    const liveData = streamsData.data || [];
+                    const userData = usersData.data || [];
+
                     twitchStreams.forEach(s => {
                         const info = liveData.find((l: { user_login: string; viewer_count: number; game_name: string; title: string }) => 
                             l.user_login.toLowerCase() === s.channelName.toLowerCase()
                         );
-                        if (info) {
-                            updateStreamMetadata(s.id, {
-                                isLive: true,
-                                viewerCount: info.viewer_count,
-                                gameName: info.game_name,
-                                title: info.title
-                            });
-                        } else {
-                            updateStreamMetadata(s.id, { isLive: false, viewerCount: 0 });
-                        }
+                        const user = userData.find((u: { login: string; profile_image_url: string }) => 
+                            u.login.toLowerCase() === s.channelName.toLowerCase()
+                        );
+                        
+                        updateStreamMetadata(s.id, {
+                            isLive: !!info,
+                            viewerCount: info?.viewer_count || 0,
+                            gameName: info?.game_name,
+                            title: info?.title,
+                            profileImage: user?.profile_image_url
+                        });
                     });
                 })
                 .catch(err => console.error('Twitch Sync Error:', err));
