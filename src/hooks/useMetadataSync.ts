@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { useStreamStore } from '../store/useStreamStore';
-
+import { useStreamStore, type Stream } from '../store/useStreamStore';
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export const useMetadataSync = () => {
@@ -17,38 +16,54 @@ export const useMetadataSync = () => {
                 const streamQuery = twitchStreams.map(s => `user_login=${s.channelName}`).join('&');
                 const userQuery = twitchStreams.map(s => `login=${s.channelName}`).join('&');
                 const token = auth.twitch?.token;
-                const headers = {
-                    'Authorization': `Bearer ${token || ''}`,
+                const headers: Record<string, string> = {
                     'Client-Id': customClientId
                 };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
                 
                 // Fetch both stream status and user info (for profile images)
+                // We use individual .then/catch to ensure one failure doesn't kill the other
                 Promise.all([
-                    fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, { headers }).then(r => r.json()),
-                    fetch(`https://api.twitch.tv/helix/users?${userQuery}`, { headers }).then(r => r.json())
+                    fetch(`https://api.twitch.tv/helix/streams?${streamQuery}`, { headers })
+                        .then(r => r.ok ? r.json() : null)
+                        .catch(() => null),
+                    fetch(`https://api.twitch.tv/helix/users?${userQuery}`, { headers })
+                        .then(r => r.ok ? r.json() : null)
+                        .catch(() => null)
                 ])
                 .then(([streamsData, usersData]) => {
-                    const liveData = streamsData.data || [];
-                    const userData = usersData.data || [];
-
                     twitchStreams.forEach(s => {
-                        const info = liveData.find((l: { user_login: string; viewer_count: number; game_name: string; title: string }) => 
-                            l.user_login.toLowerCase() === s.channelName.toLowerCase()
-                        );
-                        const user = userData.find((u: { login: string; profile_image_url: string }) => 
-                            u.login.toLowerCase() === s.channelName.toLowerCase()
-                        );
+                        const updates: Partial<Stream['metadata']> = {};
                         
-                        updateStreamMetadata(s.id, {
-                            isLive: !!info,
-                            viewerCount: info?.viewer_count || 0,
-                            gameName: info?.game_name,
-                            title: info?.title,
-                            profileImage: user?.profile_image_url
-                        });
+                        // Update Live Status if streams fetch succeeded
+                        if (streamsData && streamsData.data) {
+                            const info = streamsData.data.find((l: { user_login: string; viewer_count: number; game_name: string; title: string }) => 
+                                l.user_login.toLowerCase() === s.channelName.toLowerCase()
+                            );
+                            updates.isLive = !!info;
+                            updates.viewerCount = info?.viewer_count || 0;
+                            updates.gameName = info?.game_name;
+                            updates.title = info?.title;
+                        }
+
+                        // Update Profile Image if users fetch succeeded
+                        if (usersData && usersData.data) {
+                            const user = usersData.data.find((u: { login: string; profile_image_url: string }) => 
+                                u.login.toLowerCase() === s.channelName.toLowerCase()
+                            );
+                            if (user?.profile_image_url) {
+                                updates.profileImage = user.profile_image_url;
+                            }
+                        }
+
+                        // Only call update if we actually have data to sync
+                        if (Object.keys(updates).length > 0) {
+                            updateStreamMetadata(s.id, updates);
+                        }
                     });
-                })
-                .catch(err => console.error('Twitch Sync Error:', err));
+                });
             }
 
             // 2. Kick Sync
