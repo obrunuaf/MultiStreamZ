@@ -27,7 +27,7 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
   const getEmbedUrl = useCallback(() => {
     if (stream.platform === 'twitch') {
       const parents = getParentDomains().map(d => `parent=${d}`).join('&');
-      return `https://player.twitch.tv/?channel=${stream.channelName}&${parents}&muted=${stream.isMuted ? 'true' : 'false'}`;
+      return `https://player.twitch.tv/?channel=${stream.channelName}&${parents}&muted=${stream.isMuted ? 'true' : 'false'}&autoplay=true&playsinline=true`;
     }
     if (stream.platform === 'kick') {
       return `https://player.kick.com/${stream.channelName}`;
