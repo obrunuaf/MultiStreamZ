@@ -154,9 +154,13 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
     );
   };
 
+  const glowClass = isFeatured 
+    ? (stream.platform === 'twitch' ? 'solo-glow-twitch' : 'solo-glow-kick') 
+    : '';
+
   return (
-    <div className={`group relative w-full h-full bg-black overflow-hidden transition-all duration-300 rounded-sm ${
-        isFeatured ? 'border-2 border-neutral-100 ring-4 ring-neutral-100/5' : 'border border-white/5'
+    <div className={`group relative w-full h-full bg-black overflow-hidden transition-premium rounded-sm ${
+        isFeatured ? `border-2 ${glowClass}` : 'border border-white/5'
       }`}
     >
       {/* Premium Controls Overlay (Nevethon-Inspired Minimalism) */}

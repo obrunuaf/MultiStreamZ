@@ -32,6 +32,7 @@ interface StreamState {
   sidebarVisible: boolean;
   chatVisible: boolean;
   mapVisible: boolean;
+  amoledMode: boolean;
   sidebarWidth: number;
   mapHeight: number;
   featuredStreamId: string | null;
@@ -60,6 +61,7 @@ interface StreamState {
   toggleSidebar: () => void;
   toggleChat: () => void;
   toggleMap: () => void;
+  setAmoledMode: (enabled: boolean) => void;
   setStreamVolume: (id: string, volume: number) => void;
   toggleStreamMute: (id: string) => void;
   reloadStream: (id: string) => void;
@@ -114,6 +116,7 @@ export const useStreamStore = create<StreamState>()(
       sidebarVisible: true,
       chatVisible: true,
       mapVisible: true,
+      amoledMode: false,
       sidebarWidth: 360,
       mapHeight: 300,
       featuredStreamId: null,
@@ -235,6 +238,14 @@ export const useStreamStore = create<StreamState>()(
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
       toggleChat: () => set((state) => ({ chatVisible: !state.chatVisible })),
       toggleMap: () => set((state) => ({ mapVisible: !state.mapVisible })),
+      setAmoledMode: (enabled) => {
+        set({ amoledMode: enabled });
+        if (enabled) {
+          document.documentElement.classList.add('amoled');
+        } else {
+          document.documentElement.classList.remove('amoled');
+        }
+      },
       
       setStreamVolume: (id, volume) => set((state) => ({
         streams: state.streams.map((s) => s.id === id ? { ...s, volume } : s),
@@ -326,6 +337,7 @@ export const useStreamStore = create<StreamState>()(
         sidebarVisible: state.sidebarVisible,
         chatVisible: state.chatVisible,
         mapVisible: state.mapVisible,
+        amoledMode: state.amoledMode,
         sidebarWidth: state.sidebarWidth,
         mapHeight: state.mapHeight,
         featuredStreamId: state.featuredStreamId,

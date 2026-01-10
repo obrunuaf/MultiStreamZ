@@ -63,12 +63,13 @@ export const Sidebar: React.FC = () => {
     <>
       <aside 
       ref={sidebarRef}
-      className="h-full border-l border-border bg-background flex flex-col relative z-40 transition-all duration-300 ease-in-out"
+      className="h-full glass-panel flex flex-col relative z-40 transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
       style={{ 
         width: sidebarVisible ? `${sidebarWidth}px` : '0px',
         opacity: sidebarVisible ? 1 : 0,
-        transform: sidebarVisible ? 'translateX(0)' : 'translateX(20px)',
-        pointerEvents: sidebarVisible ? 'auto' : 'none'
+        transform: sidebarVisible ? 'translateX(0)' : 'translateX(40px)',
+        pointerEvents: sidebarVisible ? 'auto' : 'none',
+        borderLeft: '1px solid var(--glass-border)'
       }}
     >
       <div 

@@ -137,7 +137,7 @@ export const Header: React.FC = () => {
   }, [auth.twitch, customClientId, loginTwitch, logoutTwitch]);
 
   return (
-    <header className="h-13 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-50">
+    <header className="h-[header-height] glass-panel flex items-center justify-between px-4 z-100 transition-premium">
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       
       <div className="flex items-center gap-4 flex-1">
@@ -178,14 +178,14 @@ export const Header: React.FC = () => {
         </button>
         <button
           onClick={toggleMap}
-          className="p-2 hover:bg-surface rounded-md transition-colors text-neutral-400 hover:text-neutral-100"
+          className="p-2 hover:bg-white/5 rounded-md transition-premium text-neutral-400 hover:text-neutral-100"
           title="Alternar Mapa"
         >
           <MapIcon size={20} />
         </button>
         <button
           onClick={toggleSidebar}
-          className={`p-2 hover:bg-surface rounded-md transition-colors ${sidebarVisible ? 'text-neutral-100' : 'text-neutral-400'}`}
+          className={`p-2 hover:bg-white/5 rounded-md transition-premium ${sidebarVisible ? 'text-neutral-100' : 'text-neutral-400'}`}
           title="Alternar Lateral"
         >
           <LayoutGrid size={20} />

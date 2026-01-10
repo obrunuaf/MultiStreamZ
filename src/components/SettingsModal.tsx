@@ -9,7 +9,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { reorderStreams, resetLayout } = useStreamStore();
+  const { reorderStreams, resetLayout, amoledMode, setAmoledMode } = useStreamStore();
 
   if (!isOpen) return null;
 
@@ -27,9 +27,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   // Usamos Portal para garantir que o modal flutue acima de TUDO (iframes, header, etc)
   return createPortal(
-    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div 
-        className="w-full max-w-md bg-surface border border-white/10 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in duration-200"
+        className="w-full max-w-md glass-panel rounded-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -80,6 +80,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
                 <div className={`w-8 h-4 rounded-full relative transition-colors ${useStreamStore.getState().highPerformanceMode ? 'bg-yellow-500' : 'bg-neutral-800'}`}>
                   <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${useStreamStore.getState().highPerformanceMode ? 'left-4.5' : 'left-0.5'}`} />
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setAmoledMode(!amoledMode)}
+                className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-premium group"
+              >
+                <div className="text-left">
+                  <div className="text-sm font-medium text-neutral-200">Modo Amoled</div>
+                  <div className="text-[10px] text-neutral-500">Fundo preto puro (#000000) para telas OLED</div>
+                </div>
+                <div className={`w-8 h-4 rounded-full relative transition-colors ${amoledMode ? 'bg-blue-500' : 'bg-neutral-800'}`}>
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${amoledMode ? 'left-4.5' : 'left-0.5'}`} />
                 </div>
               </button>
             </div>

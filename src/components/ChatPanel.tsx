@@ -16,13 +16,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
     if (!stream) return '';
     const hostname = window.location.hostname;
     if (stream.platform === 'twitch') {
-      // Use popout URL as it often handles sessions better than the standard embed
-      // We also include both window.location.hostname for the parent requirement
-      return `https://www.twitch.tv/popout/${stream.channelName}/chat?parent=${hostname}&darkpopout=true`;
+      // Using the popout URL with parent parameter is the secret to getting 
+      // full UI parity (including the bottom bar) and 7TV support inside an iframe.
+      return `https://www.twitch.tv/popout/${stream.channelName}/chat?parent=${hostname}`;
     }
     if (stream.platform === 'kick') {
-      // Using the industry-standard Kick.CX chat client (as used by MultiKick.com)
-      // This client handles login, 7TV emotes, and is much more stable than official embed
       return `https://chat.kick.cx/embed/${stream.channelName}`;
     }
     return '';
