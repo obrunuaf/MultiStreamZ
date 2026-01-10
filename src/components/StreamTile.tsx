@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { type Stream, useStreamStore } from '../store/useStreamStore';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -154,14 +155,36 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
     );
   };
 
-  const glowClass = isFeatured 
-    ? (stream.platform === 'twitch' ? 'solo-glow-twitch' : 'solo-glow-kick') 
-    : '';
+  const glowColor = stream.platform === 'twitch' ? 'rgba(145, 71, 255, 0.4)' : 'rgba(83, 252, 24, 0.4)';
+  const borderColor = stream.platform === 'twitch' ? 'rgba(145, 71, 255, 0.2)' : 'rgba(83, 252, 24, 0.2)';
 
   return (
-    <div className={`group relative w-full h-full bg-black overflow-hidden transition-premium rounded-sm ${
-        isFeatured ? `border-2 ${glowClass}` : 'border border-white/5'
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1,
+        boxShadow: isFeatured 
+          ? [
+              `0 0 20px ${glowColor}`, 
+              `0 0 40px ${glowColor}`, 
+              `0 0 20px ${glowColor}`
+            ] 
+          : '0 0 0px rgba(0,0,0,0)'
+      }}
+      transition={{ 
+        duration: 2, 
+        repeat: Infinity,
+        ease: "easeInOut",
+        opacity: { duration: 0.5 },
+        scale: { duration: 0.5 }
+      }}
+      className={`group relative w-full h-full bg-black overflow-hidden rounded-sm transition-all duration-700 ${
+        isFeatured ? 'ring-2 ring-offset-2 ring-offset-black' : 'border border-white/5'
       }`}
+      style={{ 
+        borderColor: isFeatured ? borderColor : 'rgba(255,255,255,0.05)'
+      }}
     >
       {/* Premium Controls Overlay (Nevethon-Inspired Minimalism) */}
       <div className="absolute inset-x-0 top-0 z-20 p-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none flex justify-between items-start">
@@ -193,6 +216,6 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
          )}
          {renderContent()}
       </div>
-    </div>
+    </motion.div>
   );
 };

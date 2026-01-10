@@ -1,4 +1,4 @@
-const CACHE_NAME = 'multistreamz-v1';
+const CACHE_NAME = 'zmultilive-v1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

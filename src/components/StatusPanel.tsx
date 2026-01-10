@@ -78,7 +78,7 @@ export const StatusPanel: React.FC = () => {
             
             <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
                 <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-neutral-700 uppercase tracking-widest leading-none">MultiStreamZ Build</span>
+                    <span className="text-[8px] font-black text-neutral-700 uppercase tracking-widest leading-none">ZMultiLive Build</span>
                     <span className="text-[7px] font-mono text-neutral-800 mt-1">PRO_STABLE_4922_FF</span>
                 </div>
                 <div className="px-2 py-0.5 bg-black/40 border border-white/5 rounded-xs">

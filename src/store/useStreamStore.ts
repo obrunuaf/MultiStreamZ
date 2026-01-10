@@ -51,6 +51,7 @@ interface StreamState {
   customClientId: string;
   kickClientId: string;
   highPerformanceMode: boolean;
+  isResizing: boolean;
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
@@ -82,6 +83,7 @@ interface StreamState {
   setKickClientId: (id: string) => void;
   setHighPerformanceMode: (enabled: boolean) => void;
   updateStreamMetadata: (id: string, metadata: Partial<Stream['metadata']>) => void;
+  setIsResizing: (isResizing: boolean) => void;
   validateAndAddStream: (input: string) => Promise<boolean>;
 }
 
@@ -142,6 +144,7 @@ export const useStreamStore = create<StreamState>()(
       customClientId: '6gu4wf1zdyfcxcgmedhazg3sswibof',
       kickClientId: '01KEJ794H7E71R2YZKFYZCYDDV',
       highPerformanceMode: true,
+      isResizing: false,
 
       // Migration check: If the old generic ID is found in storage, reset it to the official one
       _migrateId: () => {
@@ -324,6 +327,7 @@ export const useStreamStore = create<StreamState>()(
       setCustomClientId: (id: string) => set({ customClientId: id }),
       setKickClientId: (id: string) => set({ kickClientId: id }),
       setHighPerformanceMode: (highPerformanceMode: boolean) => set({ highPerformanceMode }),
+      setIsResizing: (isResizing: boolean) => set({ isResizing }),
       updateStreamMetadata: (id, metadata) => set((state) => ({
         streams: state.streams.map(s => s.id === id ? { 
           ...s, 

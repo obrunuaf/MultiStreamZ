@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Layout, Model, TabNode, type IJsonModel, Actions, DockLocation } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
 import { useStreamStore } from '../store/useStreamStore';
@@ -7,7 +7,7 @@ import { ChatPanel } from './ChatPanel';
 import { MapPanel } from './MapPanel';
 import { StatusPanel } from './StatusPanel';
 
-// Custom CSS for FlexLayout to match MultiStreamZ aesthetic
+// Custom CSS for FlexLayout to match ZMultiLive aesthetic
 const CUSTOM_CSS = `
   .flexlayout__layout { background-color: #0a0a0a; }
   .flexlayout__tab { background-color: #0d0d0d; }
@@ -22,7 +22,8 @@ const CUSTOM_CSS = `
 `;
 
 export const FlexGrid: React.FC = () => {
-  const { streams, setFlexLayoutState, flexLayoutState } = useStreamStore();
+  const { streams, setFlexLayoutState, flexLayoutState, setIsResizing } = useStreamStore();
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Initial model derived from current streams
   const [model] = useState(() => {
@@ -59,6 +60,31 @@ export const FlexGrid: React.FC = () => {
     };
     return Model.fromJson(json);
   });
+
+  // Watch for splitter drags to activate global iframe protection
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('flexlayout__splitter')) {
+        setIsResizing(true);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    container.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [setIsResizing]);
 
   // Keep model in sync when streams are added or removed
   useEffect(() => {
@@ -122,7 +148,7 @@ export const FlexGrid: React.FC = () => {
   }, [streams]);
 
   return (
-    <div className="flex-1 w-full h-full p-0.5 relative">
+    <div ref={containerRef} className="flex-1 w-full h-full p-0.5 relative">
       <style>{CUSTOM_CSS}</style>
       <Layout model={model} factory={factory} onModelChange={onModelChange} />
     </div>

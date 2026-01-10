@@ -1,52 +1,16 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { useStreamStore } from '../store/useStreamStore';
 import { ChevronLeft } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { MapPanel } from './MapPanel';
+import { Group, Panel, Separator } from 'react-resizable-panels';
 
 export const Sidebar: React.FC = () => {
   const { 
     sidebarVisible, toggleSidebar, chatVisible, toggleChat, 
-    mapVisible, toggleMap, sidebarWidth, setSidebarWidth,
-    mapHeight, setMapHeight, mobileCinemaMode
+    mapVisible, toggleMap, mobileCinemaMode, setIsResizing
   } = useStreamStore();
-
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const isResizingSidebar = useRef(false);
-  const isResizingMap = useRef(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isResizingSidebar.current) {
-        const newWidth = window.innerWidth - e.clientX;
-        if (newWidth > 200 && newWidth < 800) {
-          setSidebarWidth(newWidth);
-        }
-      }
-      if (isResizingMap.current) {
-        const rect = sidebarRef.current?.getBoundingClientRect();
-        if (rect) {
-          const newHeight = e.clientY - rect.top;
-          if (newHeight > 100 && newHeight < rect.height - 100) {
-            setMapHeight(newHeight);
-          }
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      isResizingSidebar.current = false;
-      isResizingMap.current = false;
-      document.body.style.cursor = 'default';
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [setSidebarWidth, setMapHeight]);
 
   // Hide the sidebar trigger button on mobile to avoid UI clutter
   const toggleButton = (
@@ -60,53 +24,48 @@ export const Sidebar: React.FC = () => {
     </button>
   );
 
+  if (mobileCinemaMode || !sidebarVisible) {
+    return <>{toggleButton}</>;
+  }
+
   return (
     <>
-      <aside 
-      ref={sidebarRef}
-      className={`glass-panel flex flex-col relative z-40 transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${mobileCinemaMode ? 'hidden' : 'flex'}`}
-      style={{ 
-        width: sidebarVisible ? `${sidebarWidth}px` : '0px',
-        height: '100%',
-        opacity: sidebarVisible ? 1 : 0,
-        transform: sidebarVisible ? 'translateX(0)' : 'translateX(40px)',
-        pointerEvents: sidebarVisible ? 'auto' : 'none',
-        borderLeft: '1px solid var(--glass-border)'
-      }}
-    >
-      <div 
-        className="absolute left-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-neutral-600 transition-colors z-50 -ml-0.75 hidden md:block"
-        onMouseDown={() => {
-          isResizingSidebar.current = true;
-          document.body.style.cursor = 'col-resize';
-        }}
-      />
+      <motion.aside 
+        initial={{ x: 20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 20, opacity: 0 }}
+        className="glass-panel flex flex-col relative z-40 h-full overflow-hidden"
+        style={{ borderLeft: '1px solid var(--glass-border)' }}
+      >
+        <Group orientation="vertical" className="w-full h-full">
+          {mapVisible && (
+            <>
+              <Panel defaultSize={40} minSize={20}>
+                <div className="flex flex-col h-full bg-background overflow-hidden border-b border-border">
+                  <MapPanel showCloseButton onClose={toggleMap} />
+                </div>
+              </Panel>
+              {chatVisible && (
+                <Separator 
+                  className="h-1.5 bg-border/20 hover:bg-primary/20 transition-colors relative"
+                  onMouseDown={() => setIsResizing(true)}
+                >
+                  <div className="absolute inset-x-0 -top-1 -bottom-1 z-10" />
+                </Separator>
+              )}
+            </>
+          )}
 
-      {/* Map Panel */}
-      {mapVisible && (
-        <div 
-          className="relative flex flex-col bg-background overflow-hidden border-b border-border shrirnk-0"
-          style={{ height: `${mapHeight}px` }}
-        >
-          <MapPanel showCloseButton onClose={toggleMap} />
-          
-          <div 
-            className="absolute bottom-0 left-0 w-full h-1.5 cursor-row-resize hover:bg-neutral-600 transition-colors z-50 hidden md:block"
-            onMouseDown={() => {
-              isResizingMap.current = true;
-              document.body.style.cursor = 'row-resize';
-            }}
-          />
-        </div>
-      )}
-
-      {/* Chat Panel */}
-      <div className={`flex flex-col overflow-hidden transition-all duration-500 ${chatVisible ? 'h-full' : 'h-0'}`}>
-        {chatVisible && <ChatPanel showCloseButton onClose={toggleChat} />}
-      </div>
-
-    </aside>
-    {toggleButton}
-  </>
-);
+          {chatVisible && (
+            <Panel defaultSize={60} minSize={20}>
+              <div className="flex flex-col h-full overflow-hidden">
+                <ChatPanel showCloseButton onClose={toggleChat} />
+              </div>
+            </Panel>
+          )}
+        </Group>
+      </motion.aside>
+      {toggleButton}
+    </>
+  );
 };

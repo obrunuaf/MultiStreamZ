@@ -3,12 +3,21 @@ import { useStreamStore } from '../store/useStreamStore';
 import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
 import { SettingsModal } from './SettingsModal';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Suggestion } from '../hooks/useAutocomplete';
+import { useAutocomplete } from '../hooks/useAutocomplete';
 
 export const Header: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { suggestions, isLoading, setSuggestions } = useAutocomplete(input);
+
   const { 
     validateAndAddStream, 
     toggleChat, 
@@ -28,15 +37,54 @@ export const Header: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isValidating) {
-      setIsValidating(true);
-      const success = await validateAndAddStream(input.trim());
-      if (success) {
-        setInput('');
+      if (activeIndex >= 0 && suggestions[activeIndex]) {
+        handleSelectSuggestion(suggestions[activeIndex]);
+      } else {
+        setIsValidating(true);
+        const success = await validateAndAddStream(input.trim());
+        if (success) {
+          setInput('');
+          setSuggestions([]);
+        }
+        setIsValidating(false);
       }
-      setIsValidating(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        setActiveIndex(prev => (prev + 1) % suggestions.length);
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        setActiveIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
+        e.preventDefault();
+      } else if (e.key === 'Enter' && activeIndex >= 0) {
+        handleSelectSuggestion(suggestions[activeIndex]);
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        setShowSuggestions(false);
+      }
+    }
+  };
+
+  const handleSelectSuggestion = (s: Suggestion) => {
+    setInput('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    validateAndAddStream(s.login);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const handleTwitchLogin = () => {
     const OFFICIAL_TWITCH_ID = '6gu4wf1zdyfcxcgmedhazg3sswibof';
     const REDIRECT_URI = window.location.origin;
@@ -156,20 +204,20 @@ export const Header: React.FC = () => {
       {/* Brand Section - Always Left */}
       <div className="flex items-center gap-3 shrink-0 group cursor-pointer relative ">
         <div className="relative">
-          <div className="w-6 h-6 md:w-7 md:h-7 bg-neutral-100 rounded flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-lg shadow-white/5">
-            <div className="w-3 h-3 md:w-3.5 md:h-3.5 bg-background rounded-xs" />
+          <div className="w-8 h-8 md:w-9 md:h-9 bg-neutral-100/5 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-500 shadow-xl overflow-hidden border border-white/10">
+            <img src="/logo.png" className="w-full h-full object-cover" alt="ZMultiLive Logo" />
           </div>
-          <div className="absolute -top-1 -right-1 w-2 md:w-2.5 h-2 md:h-2.5 bg-red-500 rounded-full border-2 border-[#18181b] animate-live-pulse" />
+          <div className="absolute -top-1 -right-1 w-2.5 md:w-3 h-2.5 md:h-3 bg-red-500 rounded-full border-2 border-[#18181b] animate-live-pulse z-10" />
         </div>
         <div className="flex flex-col">
-          <span className="font-black text-[10px] md:text-xs tracking-[0.2em] text-neutral-100 uppercase group-hover:text-white transition-colors leading-none">MultiStreamZ</span>
+          <span className="font-black text-[10px] md:text-xs tracking-[0.2em] text-neutral-100 uppercase group-hover:text-white transition-colors leading-none">ZMultiLive</span>
         </div>
       </div>
 
       <div className="flex items-center gap-3 flex-1 justify-end">
         {/* Search Bar */}
-        <div className="hidden lg:block group/search">
-          <form onSubmit={handleSubmit} className="relative w-44">
+        <div className="hidden lg:block group/search" ref={dropdownRef}>
+          <form onSubmit={handleSubmit} className="relative w-56">
             <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within/search:text-white transition-colors pointer-events-none">
               <Search size={12} />
             </div>
@@ -177,18 +225,73 @@ export const Header: React.FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => input.length >= 2 && setShowSuggestions(true)}
               disabled={isValidating}
-              placeholder={isValidating ? "..." : "ADICIONAR CANAL..."}
+              placeholder={isValidating ? "..." : "BUSCAR CANAL..."}
               className={`w-full bg-panel/30 border rounded-md py-1.5 pl-8 pr-8 text-[9px] font-black uppercase focus:outline-none transition-all placeholder:text-neutral-700 tracking-[0.15em] search-glow hover:bg-panel/50 ${
                 isValidating ? 'border-neutral-700 opacity-50' : 'border-white/5'
               }`}
             />
+            {isLoading && (
+              <div className="absolute right-8 top-1/2 -translate-y-1/2">
+                <div className="w-3 h-3 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+              </div>
+            )}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 px-1 rounded border border-white/10 bg-white/5 text-[7px] font-black text-neutral-600 pointer-events-none">
               /
             </div>
+
+            {/* Suggestions Dropdown */}
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 glass-panel border border-white/10 rounded-lg shadow-2xl overflow-hidden z-100"
+                >
+                  <div className="p-2 border-b border-white/5 bg-white/5">
+                    <span className="text-[7px] font-black text-neutral-500 uppercase tracking-widest">Sugestões de Canais</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                    {suggestions.map((s, index) => (
+                      <motion.div 
+                        key={s.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => handleSelectSuggestion(s)}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        className={`flex items-center gap-3 p-2 cursor-pointer transition-colors ${
+                          activeIndex === index ? 'bg-twitch/20 text-white' : 'hover:bg-white/5 text-neutral-400'
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <img src={s.profile_image} className="w-7 h-7 rounded-md object-cover border border-white/10" alt="" />
+                          {s.is_live && (
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#18181b] animate-pulse" />
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-tight truncate">{s.display_name}</span>
+                            <span className={`text-[7px] font-black uppercase ${s.platform === 'twitch' ? 'text-twitch' : 'text-kick'}`}>
+                              {s.platform}
+                            </span>
+                          </div>
+                          {s.is_live && (
+                            <span className="text-[7px] font-bold text-neutral-500 truncate lowercase">{s.game_name}</span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
         </div>
-
         {/* Stream Selector */}
         <div className="hidden sm:block">
           <StreamSelector />
@@ -259,7 +362,7 @@ export const Header: React.FC = () => {
           {isAuthOpen && (
             <div className="absolute right-0 mt-3 w-80 glass-panel border border-white/10 rounded-xl shadow-2xl p-5 z-9999 animate-in fade-in slide-in-from-top-4 duration-300 cubic-bezier(0.16, 1, 0.3, 1)">
               <div className="mb-5">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-100 mb-1 ml-1">ID MULTISTREAMZ</h3>
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-100 mb-1 ml-1">ID ZMULTILIVE</h3>
                 <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">Gerencie suas conexões</p>
               </div>
 

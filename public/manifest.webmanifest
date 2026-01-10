@@ -1,6 +1,6 @@
 {
-  "name": "MultiStreamZ",
-  "short_name": "MultiStreamZ",
+  "name": "ZMultiLive",
+  "short_name": "ZMultiLive",
   "description": "Premium multi-stream platform for Twitch and Kick.",
   "start_url": "/",
   "display": "standalone",
@@ -8,16 +8,10 @@
   "theme_color": "#9146ff",
   "icons": [
     {
-      "src": "pwa-192x192.png",
-      "sizes": "192x192",
+      "src": "logo.png",
+      "sizes": "192x192 512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

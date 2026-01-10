@@ -22,6 +22,7 @@ import { StreamSlot } from './StreamSlot';
 import { FlexGrid } from './FlexGrid';
 import { SnapFlyout } from './SnapFlyout';
 import { Plus, GripHorizontal } from 'lucide-react';
+import { ResizableGrid } from './ResizableGrid';
 
 export const StreamGrid: React.FC = () => {
   const { streams, layoutType, reorderStreams, setFeaturedStream, setLayoutType } = useStreamStore();
@@ -88,13 +89,8 @@ export const StreamGrid: React.FC = () => {
   }
 
   const getGridClass = () => {
-    const count = streams.length;
     if (layoutType === 'grid') {
-      if (count === 1) return 'grid-cols-1 grid-rows-1';
-      if (count === 2) return 'grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1';
-      if (count <= 4) return 'grid-cols-2 grid-rows-2';
-      if (count <= 6) return 'grid-cols-2 md:grid-cols-3 grid-rows-3 md:grid-rows-2';
-      return 'grid-cols-3 grid-rows-3';
+      return '';
     }
     if (layoutType === 'featured') return 'layout-featured';
     if (layoutType === 'sidebar') return 'layout-sidebar';
@@ -146,51 +142,55 @@ export const StreamGrid: React.FC = () => {
           />
         )}
 
-        <SortableContext 
-          items={streams.map(s => s.id)}
-          strategy={rectSortingStrategy}
-        >
-          {stableStreams.map((stream) => {
-            const logicalIndex = streams.findIndex(s => s.id === stream.id);
-            const isFeatured = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex === 0;
-            const isSidebarItem = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex > 0;
+        {layoutType === 'grid' ? (
+          <ResizableGrid streams={streams} />
+        ) : (
+          <SortableContext 
+            items={streams.map(s => s.id)}
+            strategy={rectSortingStrategy}
+          >
+            {stableStreams.map((stream) => {
+              const logicalIndex = streams.findIndex(s => s.id === stream.id);
+              const isFeatured = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex === 0;
+              const isSidebarItem = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex > 0;
 
-            const slotStyle: React.CSSProperties = {
-              order: logicalIndex,
-              opacity: activeId === stream.id ? 0.3 : 1,
-            };
+              const slotStyle: React.CSSProperties = {
+                order: logicalIndex,
+                opacity: activeId === stream.id ? 0.3 : 1,
+              };
 
-            // Dynamic grid positioning for featured/sidebar layouts
-            if (layoutType === 'featured') {
-              if (isFeatured) {
-                slotStyle.gridColumn = '1';
-                slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
-              } else {
-                slotStyle.gridColumn = '2';
+              // Dynamic grid positioning for featured/sidebar layouts
+              if (layoutType === 'featured') {
+                if (isFeatured) {
+                  slotStyle.gridColumn = '1';
+                  slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+                } else {
+                  slotStyle.gridColumn = '2';
+                }
+              } else if (layoutType === 'sidebar') {
+                if (isFeatured) {
+                  slotStyle.gridColumn = '2';
+                  slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+                } else {
+                  slotStyle.gridColumn = '1';
+                }
               }
-            } else if (layoutType === 'sidebar') {
-              if (isFeatured) {
-                slotStyle.gridColumn = '2';
-                slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
-              } else {
-                slotStyle.gridColumn = '1';
-              }
-            }
 
-            return (
-              <div 
-                key={stream.id} 
-                className={`transition-all duration-300 w-full h-full relative min-h-0 min-w-0 ${
-                  isFeatured ? 'tile-featured' : 
-                  isSidebarItem ? 'tile-sidebar' : ''
-                }`}
-                style={slotStyle}
-              >
-                <StreamSlot stream={stream} />
-              </div>
-            );
-          })}
-        </SortableContext>
+              return (
+                <div 
+                  key={stream.id} 
+                  className={`transition-all duration-300 w-full h-full relative min-h-0 min-w-0 ${
+                    isFeatured ? 'tile-featured' : 
+                    isSidebarItem ? 'tile-sidebar' : ''
+                  }`}
+                  style={slotStyle}
+                >
+                  <StreamSlot stream={stream} />
+                </div>
+              );
+            })}
+          </SortableContext>
+        )}
 
         <DragOverlay adjustScale={false}>
           {activeId && activeStream ? (
