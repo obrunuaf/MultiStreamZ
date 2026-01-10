@@ -25,6 +25,12 @@ export const SidebarStreamList: React.FC = () => {
             {streams.map((stream) => (
                 <div 
                     key={stream.id}
+                    onWheel={(e) => {
+                      const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                      const newVolume = Math.max(0, Math.min(1, stream.volume + delta));
+                      useStreamStore.getState().setStreamVolume(stream.id, newVolume);
+                      if (delta > 0 && stream.isMuted) useStreamStore.getState().toggleStreamMute(stream.id);
+                    }}
                     className="bg-black/40 border border-white/5 rounded-sm p-3 group/item transition-all hover:border-white/10"
                 >
                     <div className="flex items-center justify-between mb-2">

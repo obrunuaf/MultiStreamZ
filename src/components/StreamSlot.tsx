@@ -62,6 +62,12 @@ export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
         containerRef.current = node;
       }}
       style={style}
+      onWheel={(e) => {
+        const delta = e.deltaY > 0 ? -0.05 : 0.05;
+        const newVolume = Math.max(0, Math.min(1, stream.volume + delta));
+        setStreamVolume(stream.id, newVolume);
+        if (delta > 0 && stream.isMuted) toggleStreamMute(stream.id);
+      }}
       className={`group w-full h-full relative border border-border/10 rounded-lg overflow-hidden transition-opacity duration-300 ${
         isDragging ? 'opacity-0' : 'opacity-100'
       }`}
