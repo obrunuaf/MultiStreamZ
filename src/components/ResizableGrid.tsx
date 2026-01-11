@@ -14,7 +14,7 @@ const ResizeHandle = ({ className = '', id }: { className?: string, id?: string 
   return (
     <Separator
       id={id}
-      className={`relative flex items-center justify-center bg-white/5 active:bg-primary/20 transition-colors z-50 ${className}`}
+      className={`relative flex items-center justify-center bg-white/5 active:bg-primary/20 transition-colors z-50 pointer-events-auto ${className}`}
       onMouseDown={() => setIsResizing(true)}
     >
       <div className="absolute inset-0 flex items-center justify-center">

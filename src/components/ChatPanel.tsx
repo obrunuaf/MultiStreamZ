@@ -16,9 +16,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
     if (!stream) return '';
     const hostname = window.location.hostname;
     if (stream.platform === 'twitch') {
-      // Using the popout URL with parent parameter is the secret to getting 
-      // full UI parity (including the bottom bar) and 7TV support inside an iframe.
-      return `https://www.twitch.tv/popout/${stream.channelName}/chat?parent=${hostname}`;
+      return `https://www.twitch.tv/embed/${stream.channelName}/chat?parent=${hostname}&darkpopout`;
     }
     if (stream.platform === 'kick') {
       return `https://chat.kick.cx/embed/${stream.channelName}`;
@@ -82,15 +80,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ showCloseButton, onClose }
       </div>
 
       <div className="flex-1 relative bg-black">
-        {activeStream ? (
-          <iframe
-            key={activeStream.id}
-            src={getChatUrl(activeStream)}
-            className="w-full h-full border-none bg-black"
-            title={`Chat for ${activeStream.channelName}`}
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          />
+        {streams.length > 0 ? (
+          streams.map((s) => (
+            <iframe
+              key={s.id}
+              src={getChatUrl(s)}
+              className={`w-full h-full border-none bg-black absolute inset-0 transition-opacity duration-300 ${
+                activeChatStreamId === s.id || (activeChatStreamId === null && streams[0].id === s.id)
+                  ? 'opacity-100 z-10' 
+                  : 'opacity-0 z-0 pointer-events-none'
+              }`}
+              title={`Chat for ${s.channelName}`}
+              loading="lazy"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            />
+          ))
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-4 gap-3 bg-background h-full">
              <div className="opacity-20 text-[10px] font-bold text-center uppercase tracking-widest">

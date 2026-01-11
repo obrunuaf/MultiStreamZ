@@ -15,7 +15,7 @@ function App() {
   const { 
     streams, addStream, layoutType, headerVisible, 
     toggleHeader, mobileCinemaMode, toggleMobileCinema,
-    isResizing, sidebarVisible, setIsResizing
+    isResizing, isDragging, sidebarVisible, setIsResizing
   } = useStreamStore();
   useMetadataSync(); // Global metadata background sync
 
@@ -42,6 +42,16 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-neutral-200 overflow-hidden relative">
+      {/* Global Protection Shield (Iframe interference fix) */}
+      {(isResizing || isDragging) && (
+        <div 
+          className="fixed inset-0 z-1000 cursor-grabbing select-none pointer-events-auto bg-transparent"
+          onMouseUp={() => {
+            useStreamStore.getState().setIsResizing(false);
+            useStreamStore.getState().setIsDragging(false);
+          }}
+        />
+      )}
       {/* Header Container with Framer Motion */}
       <motion.div 
         initial={false}
@@ -95,7 +105,7 @@ function App() {
       </AnimatePresence>
      
       <main 
-        className={`flex-1 flex overflow-hidden transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${mobileCinemaMode ? 'pb-0' : 'pb-16 md:pb-0'}`}
+        className={`flex-1 flex overflow-hidden transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) relative z-30 pointer-events-none ${mobileCinemaMode ? 'pb-0' : 'pb-16 md:pb-0'}`}
         style={{ 
           marginTop: headerVisible ? 'var(--header-height)' : '0px'
         }}
@@ -139,13 +149,6 @@ function App() {
         </div>
       </footer>
 
-      {/* Global Iframe Protection Overlay - Prevents iframes from stealing mouse events during resizing */}
-      {isResizing && (
-        <div 
-          className="fixed inset-0 z-99999 cursor-move select-none" 
-          style={{ pointerEvents: 'auto', background: 'transparent' }} 
-        />
-      )}
     </div>
   );
 }

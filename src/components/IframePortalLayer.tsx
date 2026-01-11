@@ -7,9 +7,11 @@ export const IframePortalLayer: React.FC = () => {
   const streamRects = useStreamStore((state) => state.streamRects);
   const featuredStreamId = useStreamStore((state) => state.featuredStreamId);
 
+  const stableStreams = [...streams].sort((a, b) => a.id.localeCompare(b.id));
+
   return (
     <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
-      {streams.map((stream) => {
+      {stableStreams.map((stream) => {
         const rect = streamRects[stream.id];
         if (!rect) return null;
 
@@ -23,6 +25,7 @@ export const IframePortalLayer: React.FC = () => {
               width: rect.width,
               height: rect.height,
               zIndex: stream.id === featuredStreamId ? 20 : 10,
+              transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
             <StreamTile 

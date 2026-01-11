@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { type Stream, useStreamStore } from '../store/useStreamStore';
+import { type Stream } from '../store/useStreamStore';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface StreamTileProps {
@@ -11,8 +11,7 @@ interface StreamTileProps {
 const MAX_RETRIES = 3;
 const LOADING_TIMEOUT_MS = 15000;
 
-export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) => {
-  const { reloadStream } = useStreamStore();
+export const StreamTile = React.memo<StreamTileProps>(({ stream, isFeatured }) => {
   const [status, setStatus] = useState<'loading' | 'active' | 'error'>('loading');
   const [retryCount, setRetryCount] = useState(0);
   const [errorReason, setErrorReason] = useState<string | null>(null);
@@ -186,22 +185,7 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
         borderColor: isFeatured ? borderColor : 'rgba(255,255,255,0.05)'
       }}
     >
-      {/* Premium Controls Overlay (Nevethon-Inspired Minimalism) */}
-      <div className="absolute inset-x-0 top-0 z-20 p-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none flex justify-between items-start">
-        {/* Left Side: Empty (Native Metadata here) */}
-        <div />
-
-        {/* Right Side: Essential Utility */}
-        <div className="pointer-events-auto">
-            <button 
-                onClick={() => reloadStream(stream.id)}
-                className="p-2 bg-black/40 hover:bg-black/80 text-white rounded-lg backdrop-blur-xl transition-all duration-200 border border-white/5 hover:border-white/20 shadow-2xl active:scale-90"
-                title="Recarregar esta live"
-            >
-                <RefreshCw size={13} strokeWidth={2.5} />
-            </button>
-        </div>
-      </div>
+      {/* Premium Controls Overlay - Removed (Delegated to StreamSlot) */}
 
       <div className="absolute inset-0 flex items-center justify-center bg-neutral-950">
          {status === 'loading' && (
@@ -218,4 +202,4 @@ export const StreamTile: React.FC<StreamTileProps> = ({ stream, isFeatured }) =>
       </div>
     </motion.div>
   );
-};
+});

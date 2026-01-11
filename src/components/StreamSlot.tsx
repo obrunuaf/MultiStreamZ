@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useStreamStore, type Stream } from '../store/useStreamStore';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, GripHorizontal, RefreshCw, Volume2, VolumeX, Radio } from 'lucide-react';
+import { X, GripHorizontal, RefreshCw, Radio } from 'lucide-react';
 
 interface StreamSlotProps {
   stream: Stream;
@@ -10,7 +10,7 @@ interface StreamSlotProps {
 
 export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { setStreamRect, removeStream, reloadStream, setStreamVolume, toggleStreamMute, setFeaturedStream } = useStreamStore();
+  const { setStreamRect, removeStream, reloadStream, setFeaturedStream } = useStreamStore();
 
   const {
     attributes,
@@ -62,81 +62,49 @@ export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
         containerRef.current = node;
       }}
       style={style}
-      onWheel={(e) => {
-        const delta = e.deltaY > 0 ? -0.05 : 0.05;
-        const newVolume = Math.max(0, Math.min(1, stream.volume + delta));
-        setStreamVolume(stream.id, newVolume);
-        if (delta > 0 && stream.isMuted) toggleStreamMute(stream.id);
-      }}
-      className={`group w-full h-full relative border border-border/10 rounded-lg overflow-hidden transition-opacity duration-300 ${
+      className={`group w-full h-full relative rounded-lg overflow-hidden transition-all duration-300 z-50 pointer-events-none ${
         isDragging ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* UI Controls - Always on top of the portal layer */}
-      <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-100 pointer-events-none">
-        <div className="flex items-center bg-black/60 backdrop-blur-md rounded-md border border-white/10 pointer-events-auto overflow-hidden shadow-xl">
-          <button 
-            {...attributes}
-            {...listeners}
-            className="p-1.5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-grab active:cursor-grabbing"
-            title="Arrastar"
-          >
-            <GripHorizontal size={14} />
-          </button>
-          
-          <div className="w-px h-3 bg-white/10" />
+      {/* UI Controls - Individual Discreet Buttons */}
+      <div className="absolute top-2 right-2 flex flex-row-reverse items-center gap-1.5 pointer-events-none z-100">
+        
+        {/* Remove Button - Most critical right */}
+        <button 
+          onClick={() => removeStream(stream.id)}
+          className="p-1.5 bg-black/40 hover:bg-red-500/80 text-white/40 hover:text-white rounded-lg backdrop-blur-md border border-white/5 transition-all pointer-events-auto active:scale-95"
+          title="Remover"
+        >
+          <X size={14} />
+        </button>
 
-          <button 
-            onClick={() => reloadStream(stream.id)}
-            className="p-1.5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
-            title="Recarregar live"
-          >
-            <RefreshCw size={14} />
-          </button>
-          
-          <div className="w-px h-3 bg-white/10" />
+        {/* Refresh Button - User requested primary visibility */}
+        <button 
+          onClick={() => reloadStream(stream.id)}
+          className="p-2 bg-black/40 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-all pointer-events-auto active:scale-95 shadow-xl"
+          title="Recarregar"
+        >
+          <RefreshCw size={14} strokeWidth={2.5} />
+        </button>
 
-          {/* Volume Control */}
-          <div className="flex items-center gap-1.5 px-2 bg-white/5">
-            <button 
-              onClick={() => toggleStreamMute(stream.id)}
-              className={`text-neutral-400 hover:text-white transition-colors p-0.5 ${stream.isMuted ? 'text-red-400' : ''}`}
-            >
-              {stream.isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            </button>
-            <input 
-              type="range" 
-              min="0" 
-              max="1" 
-              step="0.01" 
-              value={stream.isMuted ? 0 : stream.volume} 
-              onChange={(e) => setStreamVolume(stream.id, parseFloat(e.target.value))}
-              className="w-16 h-1 bg-neutral-600 rounded-lg appearance-none cursor-pointer accent-white"
-            />
-          </div>
+        {/* Mover Button - Discreet Circle */}
+        <button 
+          {...attributes}
+          {...listeners}
+          className="p-2 bg-black/40 hover:bg-black/80 text-white/80 hover:text-primary rounded-full backdrop-blur-md border border-white/10 transition-all pointer-events-auto cursor-grab active:cursor-grabbing shadow-xl"
+          title="Mover"
+        >
+          <GripHorizontal size={14} strokeWidth={2.5} />
+        </button>
 
-          <div className="w-px h-3 bg-white/10" />
-
-          {/* Solo Button */}
-          <button 
-            onClick={() => setFeaturedStream(stream.id)}
-            className="p-1.5 hover:bg-white/10 text-neutral-400 hover:text-purple-400 transition-colors flex items-center gap-1"
-            title="Solo (Muta os outros)"
-          >
-            <Radio size={14} />
-            <span className="text-[9px] font-black uppercase">SOLO</span>
-          </button>
-
-          <div className="w-px h-3 bg-white/10" />
-
-          <button 
-            onClick={() => removeStream(stream.id)}
-            className="p-1.5 hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition-colors"
-            title="Remover"
-          >
-            <X size={14} />
-          </button>
-        </div>
+        {/* Solo Button - Discreet */}
+        <button 
+          onClick={() => setFeaturedStream(stream.id)}
+          className="p-2 bg-black/40 hover:bg-purple-500/40 text-white/40 hover:text-purple-300 rounded-full backdrop-blur-md border border-white/5 transition-all pointer-events-auto hidden sm:block"
+          title="Solo"
+        >
+          <Radio size={14} />
+        </button>
       </div>
 
       {/* Placeholder Label (visible through the video if desired or when loading) */}

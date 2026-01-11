@@ -25,7 +25,7 @@ import { Plus, GripHorizontal } from 'lucide-react';
 import { ResizableGrid } from './ResizableGrid';
 
 export const StreamGrid: React.FC = () => {
-  const { streams, layoutType, reorderStreams, setFeaturedStream, setLayoutType } = useStreamStore();
+  const { streams, layoutType, reorderStreams, setFeaturedStream, setLayoutType, setIsDragging } = useStreamStore();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showSnapFlyout, setShowSnapFlyout] = useState(false);
@@ -44,6 +44,7 @@ export const StreamGrid: React.FC = () => {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    setIsDragging(true);
   };
 
   const handleDragMove = (event: DragMoveEvent) => {
@@ -58,6 +59,7 @@ export const StreamGrid: React.FC = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveId(null);
+    setIsDragging(false);
     setShowSnapFlyout(false);
     setGhostLayout(null);
 

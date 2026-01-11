@@ -52,6 +52,7 @@ interface StreamState {
   kickClientId: string;
   highPerformanceMode: boolean;
   isResizing: boolean;
+  isDragging: boolean;
   
   addStream: (urlOrName: string) => void;
   removeStream: (id: string) => void;
@@ -84,6 +85,7 @@ interface StreamState {
   setHighPerformanceMode: (enabled: boolean) => void;
   updateStreamMetadata: (id: string, metadata: Partial<Stream['metadata']>) => void;
   setIsResizing: (isResizing: boolean) => void;
+  setIsDragging: (isDragging: boolean) => void;
   validateAndAddStream: (input: string) => Promise<boolean>;
 }
 
@@ -145,6 +147,7 @@ export const useStreamStore = create<StreamState>()(
       kickClientId: '01KEJ794H7E71R2YZKFYZCYDDV',
       highPerformanceMode: true,
       isResizing: false,
+      isDragging: false,
 
       // Migration check: If the old generic ID is found in storage, reset it to the official one
       _migrateId: () => {
@@ -328,6 +331,7 @@ export const useStreamStore = create<StreamState>()(
       setKickClientId: (id: string) => set({ kickClientId: id }),
       setHighPerformanceMode: (highPerformanceMode: boolean) => set({ highPerformanceMode }),
       setIsResizing: (isResizing: boolean) => set({ isResizing }),
+      setIsDragging: (isDragging: boolean) => set({ isDragging }),
       updateStreamMetadata: (id, metadata) => set((state) => ({
         streams: state.streams.map(s => s.id === id ? { 
           ...s, 
