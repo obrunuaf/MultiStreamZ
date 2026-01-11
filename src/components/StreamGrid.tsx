@@ -19,7 +19,6 @@ import {
 } from '@dnd-kit/sortable';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSlot } from './StreamSlot';
-import { FlexGrid } from './FlexGrid';
 import { SnapFlyout } from './SnapFlyout';
 import { Plus, GripHorizontal } from 'lucide-react';
 import { ResizableGrid } from './ResizableGrid';
@@ -95,10 +94,6 @@ export const StreamGrid: React.FC = () => {
     );
   }
 
-  if (layoutType === 'interactive') {
-    return <FlexGrid />;
-  }
-
   const activeStream = streams.find(s => s.id === activeId);
   
   // Inline grid config to avoid Tailwind specificity issues
@@ -129,7 +124,9 @@ export const StreamGrid: React.FC = () => {
           isVisible={showSnapFlyout}
           onHoverLayout={setGhostLayout}
           onSelectLayout={(id) => {
-            setLayoutType(id as 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive');
+            if (id === 'grid' || id === 'featured' || id === 'sidebar') {
+              setLayoutType(id);
+            }
             setShowSnapFlyout(false);
           }}
         />

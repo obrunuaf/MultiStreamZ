@@ -13,7 +13,7 @@ import { stayAlive } from './utils/stayAlive';
 
 function App() {
   const { 
-    streams, addStream, layoutType, headerVisible, 
+    streams, addStream, headerVisible, 
     toggleHeader, mobileCinemaMode, toggleMobileCinema,
     isResizing, isDragging, sidebarVisible, setIsResizing
   } = useStreamStore();
@@ -104,18 +104,23 @@ function App() {
         )}
       </AnimatePresence>
      
+      {/* Spacer to push content down when Header is visible, ensuring flex-1 main doesn't overflow */}
+      <motion.div
+        initial={false}
+        animate={{ height: headerVisible ? 'var(--header-height)' : 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="flex-shrink-0"
+      />
+
       <main 
         className={`flex-1 flex overflow-hidden transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) relative z-30 pointer-events-none ${mobileCinemaMode ? 'pb-0' : 'pb-16 md:pb-0'}`}
-        style={{ 
-          paddingTop: headerVisible ? 'var(--header-height)' : '0px'
-        }}
       >
         <Group orientation="horizontal" className="w-full h-full">
           <Panel defaultSize={75} minSize={20}>
             <StreamGrid />
           </Panel>
           
-          {layoutType !== 'interactive' && sidebarVisible && (
+          {sidebarVisible && (
             <>
               <Separator 
                 className="w-1.5 bg-border/20 hover:bg-primary/40 transition-colors relative group"

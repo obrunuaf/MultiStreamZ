@@ -40,7 +40,7 @@ interface StreamState {
   featuredStreamId: string | null;
   activeChatStreamId: string | null;
   customMapUrl: string;
-  layoutType: 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive';
+  layoutType: 'grid' | 'featured' | 'sidebar';
   gridProportions: GridProportions;
   streamRects: Record<string, { top: number; left: number; width: number; height: number }>;
   flexLayoutState: string | null;
@@ -61,7 +61,7 @@ interface StreamState {
   setFeaturedStream: (id: string | null) => void;
   setActiveChatStream: (id: string | null) => void;
   setCustomMapUrl: (url: string) => void;
-  setLayoutType: (layout: 'grid' | 'featured' | 'sidebar' | 'columns' | 'interactive') => void;
+  setLayoutType: (layout: 'grid' | 'featured' | 'sidebar') => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
   toggleMap: () => void;
