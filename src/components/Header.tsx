@@ -251,9 +251,6 @@ export const Header: React.FC = () => {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="absolute top-full left-0 right-0 mt-2 glass-panel border border-white/10 rounded-lg shadow-2xl overflow-hidden z-100"
                 >
-                  <div className="p-2 border-b border-white/5 bg-white/5">
-                    <span className="text-[7px] font-black text-neutral-500 uppercase tracking-widest">Sugestões de Canais</span>
-                  </div>
                   <div className="max-h-64 overflow-y-auto custom-scrollbar">
                     {suggestions.map((s, index) => (
                       <motion.div 

@@ -72,6 +72,11 @@ export const StreamGrid: React.FC = () => {
       
       reorderStreams(newStreams);
       
+      // Force a global layout sync after DND stabilization
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50);
+      
       if (layoutType === 'featured' || layoutType === 'sidebar') {
         setFeaturedStream(newStreams[0].id);
       }
@@ -118,7 +123,7 @@ export const StreamGrid: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <div 
-        className={`flex-1 transition-all duration-500 stream-grid-container relative ${getGridClass()}`}
+        className={`flex-1 stream-grid-container relative ${getGridClass()}`}
       >
         <SnapFlyout 
           isVisible={showSnapFlyout}
@@ -181,7 +186,7 @@ export const StreamGrid: React.FC = () => {
               return (
                 <div 
                   key={stream.id} 
-                  className={`transition-all duration-300 w-full h-full relative min-h-0 min-w-0 ${
+                  className={`w-full h-full relative min-h-0 min-w-0 ${
                     isFeatured ? 'tile-featured' : 
                     isSidebarItem ? 'tile-sidebar' : ''
                   }`}
@@ -194,9 +199,11 @@ export const StreamGrid: React.FC = () => {
           </SortableContext>
         )}
 
-        <DragOverlay adjustScale={false}>
+        {/* Re-integrated into the main flow but could be portaled if needed. 
+            For now, let's fix the z-index and adjustScale. */}
+        <DragOverlay adjustScale={true} dropAnimation={null} style={{ zIndex: 9999 }}>
           {activeId && activeStream ? (
-            <div className="w-64 h-36 bg-surface/80 border-2 border-primary/50 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl backdrop-blur-xl ring-4 ring-primary/10">
+            <div className="w-64 h-36 bg-surface/90 border-2 border-primary/50 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl backdrop-blur-xl ring-4 ring-primary/20 scale-105 transition-transform">
               <GripHorizontal size={24} className="text-primary mb-2 animate-bounce" />
               <span className="text-xs font-black text-white uppercase tracking-widest">{activeStream.channelName}</span>
               <span className="text-[10px] text-primary font-bold uppercase">{activeStream.platform}</span>

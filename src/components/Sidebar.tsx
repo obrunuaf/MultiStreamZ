@@ -34,14 +34,14 @@ export const Sidebar: React.FC = () => {
         initial={{ x: 20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 20, opacity: 0 }}
-        className="glass-panel flex flex-col relative z-40 h-full overflow-hidden"
+        className="glass-panel flex flex-col relative z-40 h-full overflow-hidden pointer-events-auto"
         style={{ borderLeft: '1px solid var(--glass-border)' }}
       >
         <Group orientation="vertical" className="w-full h-full">
           {mapVisible && (
             <>
               <Panel defaultSize={40} minSize={20}>
-                <div className="flex flex-col h-full bg-background overflow-hidden border-b border-border">
+                <div className="flex flex-col h-full bg-background overflow-hidden border-b border-border pointer-events-auto">
                   <MapPanel showCloseButton onClose={toggleMap} />
                 </div>
               </Panel>

@@ -353,20 +353,36 @@ export const useStreamStore = create<StreamState>()(
             if (platform === 'twitch') {
                 const clientId = useStreamStore.getState().customClientId;
                 const token = useStreamStore.getState().auth.twitch?.token;
+                
+                // Only try background validation if we have a token/clientId
                 const res = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
                     headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token || ''}` }
                 });
-                const data = await res.json();
-                if (!data.data || data.data.length === 0) return false;
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!data.data || data.data.length === 0) {
+                        // Channel might not exist, but let's allow adding it anyway as "Best Effort"
+                        // unless we are 100% sure it's a 404 from a valid Auth state
+                        console.warn('Twitch user not found in search, but adding anyway.');
+                    }
+                }
             } else if (platform === 'kick') {
-                const res = await fetch(`https://kick.com/api/v1/channels/${channelName}`);
-                if (!res.ok) return false;
+                // Kick API is often CORS blocked. If fetch fails, we just proceed.
+                try {
+                    const res = await fetch(`https://kick.com/api/v1/channels/${channelName}`);
+                    if (!res.ok && res.status === 404) {
+                        console.warn('Kick channel not found, but adding anyway.');
+                    }
+                } catch {
+                    // CORS block likely, ignore and proceed
+                }
             }
             
             useStreamStore.getState().addStream(input);
             return true;
         } catch (e) {
-            console.error('Validation failed', e);
+            console.error('Validation failed but proceeding with "Best Effort" add:', e);
             useStreamStore.getState().addStream(input); 
             return true;
         }

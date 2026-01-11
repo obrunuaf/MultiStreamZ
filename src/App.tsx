@@ -45,7 +45,7 @@ function App() {
       {/* Global Protection Shield (Iframe interference fix) */}
       {(isResizing || isDragging) && (
         <div 
-          className="fixed inset-0 z-1000 cursor-grabbing select-none pointer-events-auto bg-transparent"
+          className="fixed inset-0 z-[9000] cursor-grabbing select-none pointer-events-auto bg-transparent"
           onMouseUp={() => {
             useStreamStore.getState().setIsResizing(false);
             useStreamStore.getState().setIsDragging(false);

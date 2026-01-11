@@ -3,7 +3,7 @@ import { Activity, Clock, ShieldAlert, Twitch, Cpu } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 
 export const StatusPanel: React.FC = () => {
-    const { auth } = useStreamStore();
+    const { auth, streams } = useStreamStore();
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {
@@ -18,9 +18,10 @@ export const StatusPanel: React.FC = () => {
                     <Activity size={14} className="text-green-400" />
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-100">Live Monitor</h3>
                 </div>
-                <span className="text-[8px] font-black bg-white/5 px-2 py-0.5 rounded-sm text-neutral-500 uppercase tracking-widest border border-white/5">v3.9 PRO</span>
+                <span className="text-[8px] font-black bg-white/5 px-2 py-0.5 rounded-sm text-neutral-500 uppercase tracking-widest border border-white/5">v4.1 PRO</span>
             </div>
 
+            {/* Time and Stats Row */}
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-black/40 p-3 rounded-sm border border-white/5 flex flex-col gap-1.5">
                     <div className="flex items-center gap-1.5 opacity-50">
@@ -33,56 +34,102 @@ export const StatusPanel: React.FC = () => {
                 </div>
                 <div className="bg-black/40 p-3 rounded-sm border border-white/5 flex flex-col gap-1.5">
                     <div className="flex items-center gap-1.5 opacity-50">
-                        <Cpu size={10} />
-                        <span className="text-[8px] font-black text-white uppercase tracking-widest">Sessão</span>
+                        <Activity size={10} />
+                        <span className="text-[8px] font-black text-white uppercase tracking-widest">Canais Ativos</span>
                     </div>
-                    <span className="text-[9px] font-black text-green-400 uppercase">
-                        Sincronizada
+                    <span className="text-[11px] font-mono font-bold text-green-400">
+                        {streams.length.toString().padStart(2, '0')}
                     </span>
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <h4 className="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] px-1 mb-3 text-center">Contas Vinculadas</h4>
+            {/* Streams Monitor List */}
+            <div className="flex-1 flex flex-col min-h-0 space-y-2">
+                <h4 className="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] px-1 mb-1">Status do Feed</h4>
                 
-                {/* Twitch Card */}
-                <div className={`rounded-sm border p-3 flex items-center justify-between transition-all ${
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {streams.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center opacity-30 border border-dashed border-white/10 rounded-sm p-4">
+                            <ShieldAlert size={20} className="mb-2" />
+                            <span className="text-[8px] font-black uppercase tracking-widest">Nenhum stream ativo</span>
+                        </div>
+                    ) : (
+                        streams.map((stream) => (
+                            <div key={stream.id} className="bg-white/5 border border-white/5 rounded-sm p-3 hover:bg-white/10 transition-colors group">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${stream.metadata?.isLive ? 'bg-red-500 animate-pulse' : 'bg-neutral-600'}`} />
+                                        <span className="text-[10px] font-bold text-neutral-200 truncate max-w-30">
+                                            {stream.channelName}
+                                        </span>
+                                    </div>
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-xs uppercase ${
+                                        stream.platform === 'twitch' ? 'bg-twitch/20 text-twitch' : 'bg-kick/20 text-kick'
+                                    }`}>
+                                        {stream.platform}
+                                    </span>
+                                </div>
+                                
+                                {stream.metadata ? (
+                                    <div className="space-y-1.5">
+                                        <div className="text-[9px] text-neutral-400 font-medium line-clamp-1 opacity-80 group-hover:opacity-100">
+                                            {stream.metadata.title || 'Sem título'}
+                                        </div>
+                                        <div className="flex items-center gap-3 text-[8px] font-bold uppercase tracking-widest text-neutral-500">
+                                            <span className="flex items-center gap-1">
+                                                <Activity size={8} />
+                                                {stream.metadata.viewerCount.toLocaleString()} Viewers
+                                            </span>
+                                            {stream.metadata.gameName && (
+                                                <span className="flex items-center gap-1 text-neutral-400">
+                                                    <Cpu size={8} />
+                                                    {stream.metadata.gameName}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-[8px] text-neutral-600 font-bold uppercase tracking-widest italic py-1">
+                                        Sincronizando metadados...
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Account Connections */}
+            <div className="space-y-2 border-t border-white/5 pt-4">
+                <h4 className="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] px-1 mb-1">Conexões do Sistema</h4>
+                
+                <div className={`rounded-sm border p-2 flex items-center justify-between transition-all ${
                     auth.twitch 
                     ? 'bg-twitch/5 border-twitch/20' 
                     : 'bg-black/40 border-white/5 grayscale opacity-50'
                 }`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-xs ${auth.twitch ? 'bg-twitch text-white' : 'bg-neutral-800'}`}>
-                            <Twitch size={14} fill="currentColor" />
+                    <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded-xs ${auth.twitch ? 'bg-twitch text-white' : 'bg-neutral-800'}`}>
+                            <Twitch size={12} fill="currentColor" />
                         </div>
                         <div>
-                            <div className="text-[10px] font-black text-white uppercase tracking-tight">Twitch TV</div>
-                            <div className="text-[9px] font-bold text-neutral-500">
-                                {auth.twitch ? `@${auth.twitch.username}` : 'Nenhuma conta'}
+                            <div className="text-[9px] font-black text-white uppercase leading-none">Twitch Integration</div>
+                            <div className="text-[8px] font-bold text-neutral-500 mt-0.5">
+                                {auth.twitch ? `@${auth.twitch.username}` : 'Desconectado'}
                             </div>
                         </div>
                     </div>
-                    {auth.twitch && <div className="w-1.5 h-1.5 rounded-full bg-twitch" />}
-                </div>
-                
-            </div>
-
-            <div className="flex-1 bg-black/20 rounded-md border border-dashed border-white/5 flex items-center justify-center p-6 text-center">
-                <div className="flex flex-col items-center gap-4">
-                    <ShieldAlert size={24} className="text-neutral-800" />
-                    <p className="text-[9px] text-neutral-700 font-bold uppercase leading-relaxed tracking-widest">
-                        Aguardando integração <br/> de estatísticas Helix
-                    </p>
+                    {auth.twitch && <div className="w-1.5 h-1.5 rounded-full bg-twitch shadow-[0_0_8px_rgba(145,71,255,0.6)]" />}
                 </div>
             </div>
             
-            <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
+            <div className="pt-2 flex justify-between items-center opacity-30 group-hover:opacity-100 transition-opacity">
                 <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-neutral-700 uppercase tracking-widest leading-none">ZMultiLive Build</span>
-                    <span className="text-[7px] font-mono text-neutral-800 mt-1">PRO_STABLE_4922_FF</span>
+                    <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest leading-none">ZMultiLive OS</span>
+                    <span className="text-[6px] font-mono text-neutral-700 mt-0.5">STABLE_V4_1_RELEASE</span>
                 </div>
-                <div className="px-2 py-0.5 bg-black/40 border border-white/5 rounded-xs">
-                    <span className="text-[7px] font-black text-neutral-700 uppercase">Acesso Global</span>
+                <div className="px-1.5 py-0.5 bg-black/40 border border-white/5 rounded-xs">
+                    <span className="text-[6px] font-black text-neutral-700 uppercase">Secure</span>
                 </div>
             </div>
         </div>

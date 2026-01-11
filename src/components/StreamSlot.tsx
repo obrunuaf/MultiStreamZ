@@ -10,7 +10,7 @@ interface StreamSlotProps {
 
 export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { setStreamRect, removeStream, reloadStream, setFeaturedStream } = useStreamStore();
+  const { setStreamRect, removeStream, reloadStream, setFeaturedStream, isResizing: isResizingGlobal, isDragging: isDraggingGlobal } = useStreamStore();
 
   const {
     attributes,
@@ -31,29 +31,37 @@ export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
     const updateRect = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setStreamRect(stream.id, {
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-        });
+        if (rect.width > 0 || rect.height > 0) {
+          setStreamRect(stream.id, {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          });
+        }
       }
     };
 
     updateRect();
-    const observer = new ResizeObserver(updateRect);
+    const rafId = requestAnimationFrame(updateRect);
+    
+    const observer = new ResizeObserver(() => {
+        updateRect();
+        requestAnimationFrame(updateRect);
+    });
+    
     if (containerRef.current) observer.observe(containerRef.current);
 
     window.addEventListener('resize', updateRect);
-    window.addEventListener('scroll', updateRect);
+    window.addEventListener('scroll', updateRect, true);
 
     return () => {
+      cancelAnimationFrame(rafId);
       observer.disconnect();
       window.removeEventListener('resize', updateRect);
-      window.removeEventListener('scroll', updateRect);
-      setStreamRect(stream.id, null);
+      window.removeEventListener('scroll', updateRect, true);
     };
-  }, [stream.id, setStreamRect]);
+  }, [stream.id, setStreamRect, isResizingGlobal, isDraggingGlobal]);
 
   return (
     <div 
@@ -62,7 +70,7 @@ export const StreamSlot: React.FC<StreamSlotProps> = ({ stream }) => {
         containerRef.current = node;
       }}
       style={style}
-      className={`group w-full h-full relative rounded-lg overflow-hidden transition-all duration-300 z-50 pointer-events-none ${
+      className={`group w-full h-full relative rounded-lg overflow-hidden z-50 pointer-events-none ${
         isDragging ? 'opacity-0' : 'opacity-100'
       }`}
     >

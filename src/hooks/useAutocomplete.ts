@@ -78,6 +78,18 @@ export const useAutocomplete = (query: string) => {
         // Silently fail Kick search
       }
 
+      if (q && q.length >= 2) {
+        allSuggestions.push({
+          id: `manual-${q}`,
+          login: q,
+          display_name: `Adicionar "${q}" manualmente`,
+          profile_image: 'https://vignette.wikia.nocookie.net/logopedia/images/8/83/Twitch_Glitch.svg',
+          is_live: false,
+          game_name: 'Link direto ou nome',
+          platform: q.includes('kick.com') ? 'kick' : 'twitch'
+        });
+      }
+
       setSuggestions(allSuggestions);
     } catch (err) {
       console.error('Autocomplete fetch failed:', err);

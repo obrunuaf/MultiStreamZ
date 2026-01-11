@@ -3,7 +3,10 @@ import { useStreamStore } from '../store/useStreamStore';
 import { Trash2, Volume2, VolumeX, RefreshCw, Users, Tv } from 'lucide-react';
 
 export const SidebarStreamList: React.FC = () => {
-    const { streams, removeStream, toggleStreamMute, reloadStream } = useStreamStore();
+    const { 
+        streams, removeStream, toggleStreamMute, reloadStream,
+        activeChatStreamId, setActiveChatStream 
+    } = useStreamStore();
 
     if (streams.length === 0) {
         return (
@@ -25,13 +28,18 @@ export const SidebarStreamList: React.FC = () => {
             {streams.map((stream) => (
                 <div 
                     key={stream.id}
+                    onClick={() => setActiveChatStream(stream.id)}
                     onWheel={(e) => {
                       const delta = e.deltaY > 0 ? -0.05 : 0.05;
                       const newVolume = Math.max(0, Math.min(1, stream.volume + delta));
                       useStreamStore.getState().setStreamVolume(stream.id, newVolume);
                       if (delta > 0 && stream.isMuted) useStreamStore.getState().toggleStreamMute(stream.id);
                     }}
-                    className="bg-black/40 border border-white/5 rounded-sm p-3 group/item transition-all hover:border-white/10"
+                    className={`cursor-pointer border rounded-md p-3 group/item transition-all duration-300 ${
+                        activeChatStreamId === stream.id 
+                        ? 'bg-white/10 border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.05)]' 
+                        : 'bg-black/40 border-white/5 hover:border-white/10'
+                    }`}
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 overflow-hidden">

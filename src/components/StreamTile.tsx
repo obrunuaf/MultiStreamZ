@@ -36,16 +36,21 @@ export const StreamTile = React.memo<StreamTileProps>(({ stream, isFeatured }) =
   }, [stream.platform, stream.channelName, stream.isMuted, getParentDomains]);
 
   useEffect(() => {
+    // Kick streams are almost always CORS blocked in iframes.
+    // We detect them and trigger error state quickly for the fallback UI.
+    const isKick = stream.platform === 'kick';
+    const timeout = isKick ? 2000 : LOADING_TIMEOUT_MS;
+
     if (status === 'loading') {
       timeoutRef.current = setTimeout(() => {
         setStatus('error');
-        setErrorReason('Tempo limite excedido');
-      }, LOADING_TIMEOUT_MS);
+        setErrorReason(isKick ? 'Acesso Direto Bloqueado' : 'Tempo limite excedido');
+      }, timeout);
     }
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [status, retryCount]);
+  }, [status, retryCount, stream.platform]);
 
   const handleLoad = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
