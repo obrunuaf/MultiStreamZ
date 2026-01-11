@@ -41,7 +41,7 @@ export const Sidebar: React.FC = () => {
           {mapVisible && (
             <>
               <Panel defaultSize={40} minSize={20}>
-                <div className="flex flex-col h-full bg-background overflow-hidden border-b border-border pointer-events-auto">
+                <div className="flex flex-col h-full bg-background overflow-hidden border-b border-border pointer-events-auto min-h-0">
                   <MapPanel showCloseButton onClose={toggleMap} />
                 </div>
               </Panel>
@@ -58,7 +58,7 @@ export const Sidebar: React.FC = () => {
 
           {chatVisible && (
             <Panel defaultSize={60} minSize={20}>
-              <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex flex-col h-full overflow-hidden min-h-0">
                 <ChatPanel showCloseButton onClose={toggleChat} />
               </div>
             </Panel>

@@ -38,7 +38,7 @@ export const ChatPanel = React.memo<ChatPanelProps>(({ showCloseButton, onClose 
   const stableStreams = [...streams].sort((a, b) => a.id.localeCompare(b.id));
 
   return (
-    <div className="flex-1 flex flex-col bg-background overflow-hidden relative h-full pointer-events-auto">
+    <div className="flex-1 flex flex-col bg-background overflow-hidden relative min-h-0 pointer-events-auto">
       <div className="flex flex-col border-b border-white/5 bg-panel/30">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">

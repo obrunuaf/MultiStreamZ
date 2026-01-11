@@ -45,7 +45,7 @@ function App() {
       {/* Global Protection Shield (Iframe interference fix) */}
       {(isResizing || isDragging) && (
         <div 
-          className="fixed inset-0 z-[9000] cursor-grabbing select-none pointer-events-auto bg-transparent"
+          className="fixed inset-0 z-9000 cursor-grabbing select-none pointer-events-auto bg-transparent"
           onMouseUp={() => {
             useStreamStore.getState().setIsResizing(false);
             useStreamStore.getState().setIsDragging(false);
@@ -107,7 +107,7 @@ function App() {
       <main 
         className={`flex-1 flex overflow-hidden transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) relative z-30 pointer-events-none ${mobileCinemaMode ? 'pb-0' : 'pb-16 md:pb-0'}`}
         style={{ 
-          marginTop: headerVisible ? 'var(--header-height)' : '0px'
+          paddingTop: headerVisible ? 'var(--header-height)' : '0px'
         }}
       >
         <Group orientation="horizontal" className="w-full h-full">

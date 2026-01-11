@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Clock, ShieldAlert, Twitch, Cpu } from 'lucide-react';
+import { Activity, Clock, ShieldAlert, Twitch, Cpu, RefreshCw } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 
 export const StatusPanel: React.FC = () => {
@@ -18,7 +18,16 @@ export const StatusPanel: React.FC = () => {
                     <Activity size={14} className="text-green-400" />
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-100">Live Monitor</h3>
                 </div>
-                <span className="text-[8px] font-black bg-white/5 px-2 py-0.5 rounded-sm text-neutral-500 uppercase tracking-widest border border-white/5">v4.1 PRO</span>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => window.dispatchEvent(new Event('refresh-metadata'))}
+                        className="p-1 hover:bg-white/10 rounded-sm transition-colors text-neutral-400 hover:text-white"
+                        title="Atualizar Metadados"
+                    >
+                        <RefreshCw size={12} />
+                    </button>
+                    <span className="text-[8px] font-black bg-white/5 px-2 py-0.5 rounded-sm text-neutral-500 uppercase tracking-widest border border-white/5">v4.1 PRO</span>
+                </div>
             </div>
 
             {/* Time and Stats Row */}

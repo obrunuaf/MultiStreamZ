@@ -94,6 +94,16 @@ export const useMetadataSync = () => {
 
         syncMetadata();
         const interval = setInterval(syncMetadata, REFRESH_INTERVAL);
-        return () => clearInterval(interval);
+        
+        const handleManualRefresh = () => {
+            console.log('Manual metadata refresh triggered');
+            syncMetadata();
+        };
+        window.addEventListener('refresh-metadata', handleManualRefresh);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('refresh-metadata', handleManualRefresh);
+        };
     }, [auth.twitch?.token, customClientId, updateStreamMetadata]);
 };

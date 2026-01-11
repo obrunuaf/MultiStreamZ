@@ -66,20 +66,20 @@ export const ResizableGrid: React.FC<ResizableGridProps> = ({ streams }) => {
     if (count === 3) {
       return (
         <Group orientation="vertical" className="w-full h-full">
-          <Panel defaultSize={50} minSize={20}>
+          <Panel key={streams[0].id} defaultSize={60} minSize={30}>
+            <StreamSlot stream={streams[0]} />
+          </Panel>
+          <ResizeHandle className="h-1.5" />
+          <Panel defaultSize={40} minSize={20}>
             <Group orientation="horizontal">
-              <Panel key={streams[0].id} defaultSize={50} minSize={20}>
-                <StreamSlot stream={streams[0]} />
-              </Panel>
-              <ResizeHandle className="w-1.5" />
               <Panel key={streams[1].id} defaultSize={50} minSize={20}>
                 <StreamSlot stream={streams[1]} />
               </Panel>
+              <ResizeHandle className="w-1.5" />
+              <Panel key={streams[2].id} defaultSize={50} minSize={20}>
+                <StreamSlot stream={streams[2]} />
+              </Panel>
             </Group>
-          </Panel>
-          <ResizeHandle className="h-1.5" />
-          <Panel key={streams[2].id} defaultSize={50} minSize={20}>
-            <StreamSlot stream={streams[2]} />
           </Panel>
         </Group>
       );

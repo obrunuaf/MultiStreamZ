@@ -95,24 +95,24 @@ export const StreamGrid: React.FC = () => {
     );
   }
 
-  const getGridClass = () => {
-    if (layoutType === 'grid') {
-      return '';
-    }
-    if (layoutType === 'featured') return 'layout-featured';
-    if (layoutType === 'sidebar') return 'layout-sidebar';
-    if (layoutType === 'columns') return 'layout-columns';
-    return '';
-  };
-
   if (layoutType === 'interactive') {
     return <FlexGrid />;
   }
 
-  // To prevent iframe reloads, we keep the SLOTS stable in the DOM.
-  // The iframes are in a separate layer, synchronized with these slots.
-  const stableStreams = [...streams].sort((a, b) => a.id.localeCompare(b.id));
   const activeStream = streams.find(s => s.id === activeId);
+  
+  // Inline grid config to avoid Tailwind specificity issues
+  const gridStyle: React.CSSProperties = {};
+  if (layoutType === 'featured') {
+    gridStyle.gridTemplateColumns = '3fr 1fr';
+    gridStyle.gridTemplateRows = `repeat(${Math.max(1, streams.length - 1)}, 1fr)`;
+  } else if (layoutType === 'sidebar') {
+    gridStyle.gridTemplateColumns = '1fr 3fr';
+    gridStyle.gridTemplateRows = `repeat(${Math.max(1, streams.length - 1)}, 1fr)`;
+  } else if (layoutType === 'grid') {
+    const cols = streams.length <= 1 ? 1 : 2;
+    gridStyle.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  }
   
   return (
     <DndContext 
@@ -123,7 +123,7 @@ export const StreamGrid: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <div 
-        className={`flex-1 stream-grid-container relative ${getGridClass()}`}
+        className="flex-1 stream-grid-container relative"
       >
         <SnapFlyout 
           isVisible={showSnapFlyout}
@@ -156,54 +156,55 @@ export const StreamGrid: React.FC = () => {
             items={streams.map(s => s.id)}
             strategy={rectSortingStrategy}
           >
-            {stableStreams.map((stream) => {
-              const logicalIndex = streams.findIndex(s => s.id === stream.id);
-              const isFeatured = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex === 0;
-              const isSidebarItem = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex > 0;
+            <div 
+              className="flex-1 grid gap-1 w-full h-full min-h-0 min-w-0 pb-16 md:pb-0"
+              style={gridStyle}
+            >
+                {streams.map((stream, logicalIndex) => {
+                  const isFeatured = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex === 0;
+                  const isSidebarItem = (layoutType === 'featured' || layoutType === 'sidebar') && logicalIndex > 0;
 
-              const slotStyle: React.CSSProperties = {
-                order: logicalIndex,
-                opacity: activeId === stream.id ? 0.3 : 1,
-              };
+                  const slotStyle: React.CSSProperties = {
+                    opacity: activeId === stream.id ? 0.3 : 1,
+                  };
 
-              // Dynamic grid positioning for featured/sidebar layouts
-              if (layoutType === 'featured') {
-                if (isFeatured) {
-                  slotStyle.gridColumn = '1';
-                  slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
-                } else {
-                  slotStyle.gridColumn = '2';
-                }
-              } else if (layoutType === 'sidebar') {
-                if (isFeatured) {
-                  slotStyle.gridColumn = '2';
-                  slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
-                } else {
-                  slotStyle.gridColumn = '1';
-                }
-              }
+                  // Dynamic grid positioning for featured/sidebar layouts
+                  if (layoutType === 'featured') {
+                    if (isFeatured) {
+                      slotStyle.gridColumn = '1';
+                      slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+                    } else {
+                      slotStyle.gridColumn = '2';
+                    }
+                  } else if (layoutType === 'sidebar') {
+                    if (isFeatured) {
+                      slotStyle.gridColumn = '2';
+                      slotStyle.gridRow = `1 / span ${Math.max(1, streams.length - 1)}`;
+                    } else {
+                      slotStyle.gridColumn = '1';
+                    }
+                  }
 
-              return (
-                <div 
-                  key={stream.id} 
-                  className={`w-full h-full relative min-h-0 min-w-0 ${
-                    isFeatured ? 'tile-featured' : 
-                    isSidebarItem ? 'tile-sidebar' : ''
-                  }`}
-                  style={slotStyle}
-                >
-                  <StreamSlot stream={stream} />
-                </div>
-              );
-            })}
+                  return (
+                    <div 
+                      key={stream.id} 
+                      className={`w-full h-full relative min-h-0 min-w-0 ${
+                        isFeatured ? 'tile-featured' : 
+                        isSidebarItem ? 'tile-sidebar' : ''
+                      }`}
+                      style={slotStyle}
+                    >
+                      <StreamSlot stream={stream} />
+                    </div>
+                  );
+                })}
+            </div>
           </SortableContext>
         )}
 
-        {/* Re-integrated into the main flow but could be portaled if needed. 
-            For now, let's fix the z-index and adjustScale. */}
-        <DragOverlay adjustScale={true} dropAnimation={null} style={{ zIndex: 9999 }}>
+        <DragOverlay adjustScale={false} dropAnimation={null} style={{ zIndex: 99999 }}>
           {activeId && activeStream ? (
-            <div className="w-64 h-36 bg-surface/90 border-2 border-primary/50 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl backdrop-blur-xl ring-4 ring-primary/20 scale-105 transition-transform">
+            <div className="w-64 h-36 bg-surface/90 border-2 border-primary/50 rounded-xl flex flex-col items-center justify-center p-4 shadow-2xl backdrop-blur-xl ring-4 ring-primary/20 pointer-events-none scale-105">
               <GripHorizontal size={24} className="text-primary mb-2 animate-bounce" />
               <span className="text-xs font-black text-white uppercase tracking-widest">{activeStream.channelName}</span>
               <span className="text-[10px] text-primary font-bold uppercase">{activeStream.platform}</span>

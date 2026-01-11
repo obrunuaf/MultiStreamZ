@@ -237,7 +237,7 @@ export const useStreamStore = create<StreamState>()(
           featuredStreamId: id, 
           activeChatStreamId: id,
           streams: updatedStreams,
-          layoutType: state.layoutType === 'grid' ? 'featured' : state.layoutType 
+          layoutType: state.layoutType 
         };
       }),
 
