@@ -1,8 +1,7 @@
-import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch, Search, ChevronUp } from 'lucide-react';
+import { MessageSquare, Map as MapIcon, Settings, LayoutGrid, LogOut, Twitch, Search, ChevronUp, ChevronDown, Wrench, Trash2, Zap, RefreshCw, Info } from 'lucide-react';
 import { useStreamStore } from '../store/useStreamStore';
 import { StreamSelector } from './StreamSelector';
 import { LayoutSelector } from './LayoutSelector';
-import { SettingsModal } from './SettingsModal';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Suggestion } from '../hooks/useAutocomplete';
@@ -10,11 +9,15 @@ import { useAutocomplete } from '../hooks/useAutocomplete';
 
 export const Header: React.FC = () => {
   const [input, setInput] = useState('');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   const { suggestions, isLoading, setSuggestions } = useAutocomplete(input);
 
@@ -22,6 +25,8 @@ export const Header: React.FC = () => {
     validateAndAddStream, 
     toggleChat, 
     toggleMap, 
+    chatVisible,
+    mapVisible,
     sidebarVisible, 
     toggleSidebar, 
     auth, 
@@ -30,8 +35,16 @@ export const Header: React.FC = () => {
     customClientId, 
     addStream, 
     activeChatStreamId,
-    toggleHeader
+    toggleHeader,
+    amoledMode,
+    setAmoledMode,
+    resetLayout,
+    reorderStreams
   } = useStreamStore();
+
+  const highPerformanceMode = useStreamStore(state => state.highPerformanceMode);
+  const setHighPerformanceMode = (val: boolean) => useStreamStore.getState().setHighPerformanceMode(val);
+
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,10 +94,17 @@ export const Header: React.FC = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
       }
+      if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) {
+        setIsToolsOpen(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
   const handleTwitchLogin = () => {
     const OFFICIAL_TWITCH_ID = '6gu4wf1zdyfcxcgmedhazg3sswibof';
     const REDIRECT_URI = window.location.origin;
@@ -197,9 +217,21 @@ export const Header: React.FC = () => {
     }
   }, [auth.twitch, customClientId, loginTwitch, logoutTwitch]);
 
+  const handleReset = () => { 
+    resetLayout(); 
+    setIsSettingsOpen(false);
+    alert('Layout resetado!'); 
+  };
+  
+  const handleClear = () => {
+    if (confirm('Remover todas as lives?')) {
+      reorderStreams([]);
+      setIsSettingsOpen(false);
+    }
+  };
+
   return (
     <header className="h-[header-height] glass-panel flex items-center justify-between px-4 md:px-6 z-50 border-b border-white/5 shadow-2xl transition-premium backdrop-blur-xl">
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       
       {/* Brand Section - Always Left */}
       <div className="flex items-center gap-3 shrink-0 group cursor-pointer relative ">
@@ -295,37 +327,166 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Layout & Toolbar Group */}
-        <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5 ml-2">
+        <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5 ml-2 relative" ref={toolsRef}>
           <LayoutSelector />
           <div className="w-px h-4 bg-white/10 mx-1" />
+          
           <button
-            onClick={toggleChat}
-            className={`p-1.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 ${activeChatStreamId ? 'text-purple-400' : 'text-neutral-400'} hover:text-white`}
-            title="Alternar Chat"
+            onClick={() => setIsToolsOpen(!isToolsOpen)}
+            className={`flex items-center gap-1.5 p-1.5 px-2.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 ${
+              isToolsOpen ? 'bg-white/10 text-white' : 'text-neutral-400'
+            } hover:text-white group/tools`}
+            title="Ferramentas Extra"
           >
-            <MessageSquare size={16} />
+            <div className="relative">
+              <Wrench size={16} />
+              {(activeChatStreamId && !chatVisible) && (
+                <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-red-500 rounded-full border border-background animate-pulse" />
+              )}
+            </div>
+            <ChevronDown size={12} className={`transition-transform duration-300 ${isToolsOpen ? 'rotate-180 text-white' : 'text-neutral-600'}`} />
           </button>
-          <button
-            onClick={toggleMap}
-            className="p-1.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 text-neutral-400 hover:text-white"
-            title="Alternar Mapa"
-          >
-            <MapIcon size={16} />
-          </button>
-          <button
-            onClick={toggleSidebar}
-            className={`p-1.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 ${sidebarVisible ? 'text-neutral-100 bg-white/5 shadow-inner' : 'text-neutral-400'} hover:text-white`}
-            title="Alternar Lateral"
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-1.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 text-neutral-400 hover:text-white border-l border-white/10 ml-0.5 pl-2"
-            title="Configurações"
-          >
-            <Settings size={16} />
-          </button>
+
+          {/* Tools Dropdown */}
+          <AnimatePresence>
+            {isToolsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute top-full right-0 mt-2 w-48 glass-panel border border-white/10 rounded-xl shadow-2xl p-2 z-100"
+              >
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => { toggleChat(); setIsToolsOpen(false); }}
+                    className={`flex items-center justify-between p-2.5 rounded-lg transition-colors group/item ${
+                      chatVisible ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <MessageSquare size={16} className={chatVisible ? 'text-purple-400' : 'text-neutral-500'} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Chat Multilive</span>
+                    </div>
+                    {chatVisible && <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(145,70,255,0.5)]" />}
+                  </button>
+
+                  <button
+                    onClick={() => { toggleMap(); setIsToolsOpen(false); }}
+                    className={`flex items-center justify-between p-2.5 rounded-lg transition-colors group/item ${
+                      mapVisible ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-white/5 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapIcon size={16} className={mapVisible ? 'text-blue-400' : 'text-neutral-500'} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Mapa GPS</span>
+                    </div>
+                    {mapVisible && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}
+                  </button>
+
+                  <div className="h-px bg-white/5 my-1" />
+
+                  <button
+                    onClick={toggleSidebar}
+                    className={`flex items-center justify-between p-2.5 rounded-lg transition-colors group/item ${
+                      sidebarVisible ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <LayoutGrid size={16} className={sidebarVisible ? 'text-white' : 'text-neutral-500'} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Painel Lateral</span>
+                    </div>
+                    {sidebarVisible && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" />}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Settings Dropdown */}
+          <div className="relative" ref={settingsRef}>
+            <button 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`p-1.5 rounded-md transition-premium hover:bg-white/5 active:scale-95 border-l border-white/10 ml-0.5 pl-2 ${
+                isSettingsOpen ? 'text-white bg-white/5' : 'text-neutral-400'
+              } hover:text-white`}
+              title="Configurações"
+            >
+              <Settings size={16} className={isSettingsOpen ? 'animate-spin-slow' : ''} />
+            </button>
+
+            <AnimatePresence>
+              {isSettingsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute top-full right-0 mt-2 w-64 glass-panel border border-white/10 rounded-xl shadow-2xl p-4 z-100 space-y-4"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Settings size={14} className="text-neutral-500" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-100">Ajustes</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <button 
+                      onClick={() => setHighPerformanceMode(!highPerformanceMode)}
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <Zap size={14} className={highPerformanceMode ? 'text-yellow-500' : 'text-neutral-600'} />
+                        <span className="text-[11px] font-bold text-neutral-300">Alto Desempenho</span>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${highPerformanceMode ? 'bg-yellow-500' : 'bg-neutral-800'}`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${highPerformanceMode ? 'left-4.5' : 'left-0.5'}`} />
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => setAmoledMode(!amoledMode)}
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <div className={`w-3.5 h-3.5 rounded-md border border-white/10 ${amoledMode ? 'bg-black shadow-[0_0_8px_rgba(0,0,0,1)]' : 'bg-neutral-800'}`} />
+                        <span className="text-[11px] font-bold text-neutral-300">Modo Amoled</span>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${amoledMode ? 'bg-blue-500' : 'bg-neutral-800'}`}>
+                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${amoledMode ? 'left-4.5' : 'left-0.5'}`} />
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="h-px bg-white/5 mx-1" />
+
+                  <div className="space-y-1.5">
+                    <button 
+                      onClick={handleReset}
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors text-neutral-400 hover:text-white"
+                    >
+                      <RefreshCw size={14} />
+                      <span className="text-[11px] font-bold">Resetar Layout</span>
+                    </button>
+
+                    <button 
+                      onClick={handleClear}
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-500/10 transition-colors text-neutral-400 hover:text-red-400"
+                    >
+                      <Trash2 size={14} />
+                      <span className="text-[11px] font-bold">Limpar Todas as Lives</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="flex items-start gap-2 p-2 bg-blue-500/5 rounded-lg border border-blue-500/10">
+                      <Info size={12} className="text-blue-400 shrink-0 mt-0.5" />
+                      <p className="text-[8px] text-blue-400/60 leading-tight">
+                        Seus dados são salvos localmente no navegador.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Auth Group */}
