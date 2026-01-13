@@ -151,7 +151,6 @@ export const Header: React.FC = () => {
                     profileImage: user.profile_image_url,
                     token
                 });
-                addStream(user.login);
             }
         })
         .catch(err => console.error('Twitch Auth Error:', err));
@@ -180,7 +179,6 @@ export const Header: React.FC = () => {
                     profileImage: user.profile_image_url,
                     token
                 });
-                addStream(user.login);
                 setIsAuthOpen(false);
             }
         });
